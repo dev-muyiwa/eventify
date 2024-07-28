@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: app
+    build: .
+    ports:
+      - '${PORT}:3000'
+    env_file:
+      - .env
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - api-network
+
+  postgres-db:
+    container_name: postgres-db
+    image: postgres:16
+    restart: always
+    env_file:
+      - .env
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - api-network
+
+
+volumes:
+  db_data:
+
+networks:
+  api-network:
+    name: api-network
