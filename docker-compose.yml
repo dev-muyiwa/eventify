@@ -8,6 +8,10 @@ services:
       - '${PORT}:3000'
     env_file:
       - .env
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider --timeout=10 --quiet http://localhost:3000/api/v1/health || exit 1" ]
+      interval: 30s
+      retries: 3
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -20,6 +24,10 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 30s
@@ -32,6 +40,74 @@ services:
     networks:
       - api-network
 
+  promtail:
+    container_name: promtail
+    image: grafana/promtail:3.0.0
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - ./logs:/var/log/app
+    command: -config.file=/etc/promtail/config.yml
+    ports:
+      - "9080:9080"
+    depends_on:
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "sh", "-c", "(echo > /dev/tcp/localhost/9080) >/dev/null 2>&1 && echo 'Promtail is up' || (echo 'Promtail is down' && exit 1)"]
+      interval: 30s
+      retries: 3
+    networks:
+      - logging-network
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider --timeout=10 --quiet http://localhost:9090/metrics || exit 1" ]
+      interval: 30s
+      retries: 3
+    networks:
+      - logging-network
+
+  loki:
+    container_name: loki
+    image: grafana/loki:main
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yml
+    command: -config.file=/etc/loki/local-config.yml
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider --timeout=10 --quiet http://localhost:3100/metrics || exit 1" ]
+      interval: 30s
+      retries: 3
+    networks:
+      - logging-network
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --spider --timeout=10 --quiet http://localhost:3000/api/health || exit 1" ]
+      interval: 30s
+      retries: 3
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    networks:
+      - logging-network
+
 
 volumes:
   db_data:
@@ -39,3 +115,5 @@ volumes:
 networks:
   api-network:
     name: api-network
+  logging-network:
+    name: logging-network

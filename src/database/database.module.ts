@@ -56,8 +56,6 @@ export class DatabaseModule implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // const { default: Postgrator } = await import('postgrator');
-
     const dbConfig = getKnexConfig(this.configService);
 
     const postgrator = new Postgrator({
