@@ -6,6 +6,8 @@ import { getKnexConfig } from './knexfile';
 import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import Postgrator from 'postgrator';
+import * as os from 'node:os';
+import * as process from 'node:process';
 
 @Global()
 @Module({
@@ -59,7 +61,7 @@ export class DatabaseModule implements OnModuleInit {
     const dbConfig = getKnexConfig(this.configService);
 
     const postgrator = new Postgrator({
-      migrationPattern: `${__dirname}/migrations/*`,
+      migrationPattern: `${process.cwd()}/migrations/*`,
       driver: 'pg',
       database: (dbConfig.connection as any).database,
       schemaTable: 'schema_migrations',
@@ -93,7 +95,7 @@ export class DatabaseModule implements OnModuleInit {
         context: 'DatabaseModule',
       });
     } catch (error) {
-      this.logger.error('Error running migrations:', {
+      this.logger.error(`Error running migrations:${error}`, {
         context: 'DatabaseModule',
         error: error,
       });
