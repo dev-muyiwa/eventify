@@ -1,29 +1,41 @@
-import Joi, { ObjectSchema } from 'joi';
+import { IsString, IsNumber, ValidateNested, IsNotEmpty, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export interface EnvConfig {
-  node_env: 'local' | 'development' | 'production' | 'test';
-  app_name: string;
+class DatabaseConfig {
+  @IsString()
+  @IsNotEmpty({ message: 'Database host is required' })
+  host: string;
+
+  @Type(() => Number)
+  @IsNumber()
   port: number;
-  database: {
-    host: string;
-    port: number;
-    user: string;
-    password: string;
-    name: string;
-  };
+
+  @IsString()
+  @IsNotEmpty({ message: 'Database user is required' })
+  user: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Database password is required' })
+  password: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Database name is required' })
+  name: string;
 }
 
-export const validationSchema: ObjectSchema<EnvConfig> = Joi.object({
-  node_env: Joi.string()
-    .valid('local', 'development', 'production', 'test')
-    .required(),
-  app_name: Joi.string().default('Twitter'),
-  port: Joi.number().default(3000),
-  database: Joi.object({
-    host: Joi.string().required(),
-    port: Joi.number(),
-    user: Joi.string().required(),
-    password: Joi.string().required(),
-    name: Joi.string().required(),
-  }).required(),
-});
+export class EnvConfig {
+  @IsString()
+  @IsIn(['local', 'development', 'production', 'test'])
+  node_env: 'local' | 'development' | 'production' | 'test';
+
+  @IsString()
+  app_name: string;
+
+  @Type(() => Number)
+  @IsNumber()
+  port: number;
+
+  @ValidateNested()
+  @Type(() => DatabaseConfig)
+  database: DatabaseConfig;
+}

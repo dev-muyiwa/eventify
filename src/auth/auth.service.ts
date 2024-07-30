@@ -1,10 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { ConfigService } from '@nestjs/config';
+import { Knex } from 'knex';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
+  constructor(
+    private configService: ConfigService,
+    @Inject('KnexConnection') private readonly knex: Knex,
+  ) {}
+  create(createAuthDto: RegisterUserDto) {
     return 'This action adds a new auth';
   }
 
