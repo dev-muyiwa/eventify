@@ -17,5 +17,4 @@ import { DatabaseService } from './database.service';
   ],
   exports: ['KnexConnection', DatabaseService],
 })
-export class DatabaseModule {
-}
+export class DatabaseModule {}
