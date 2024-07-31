@@ -1,4 +1,10 @@
-import { IsString, IsNumber, ValidateNested, IsNotEmpty, IsIn } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  ValidateNested,
+  IsNotEmpty,
+  IsIn,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class DatabaseConfig {

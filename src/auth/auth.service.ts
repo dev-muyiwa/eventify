@@ -1,8 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { Knex } from 'knex';
+import bcrypt from 'bcryptjs';
+import { Auth } from './entities/auth.entity';
 
 @Injectable()
 export class AuthService {
@@ -10,8 +12,29 @@ export class AuthService {
     private configService: ConfigService,
     @Inject('KnexConnection') private readonly knex: Knex,
   ) {}
-  create(createAuthDto: RegisterUserDto) {
-    return 'This action adds a new auth';
+
+  async create(createAuthDto: RegisterUserDto) {
+    const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
+    const existingUser = await this.knex('users').where('email', email).first();
+    if (existingUser) {
+      throw new BadRequestException(
+        'an account with this email already exists',
+      );
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const [newUser] = await this.knex('users')
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        dob: dateOfBirth,
+        email: email,
+        password: passwordHash,
+      } as Auth)
+      .returning('*');
+    return newUser;
   }
 
   findAll() {

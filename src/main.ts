@@ -1,7 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
-import { HttpExceptionFilter } from './util/exception.filter';
+import {
+  BadRequestException,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
+import { GlobalExceptionFilter } from './util/exception.filter';
 import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import morgan from 'morgan';
@@ -36,8 +40,15 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  app.useGlobalPipes(new ValidationPipe());
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      exceptionFactory: (errors) => {
+        return new BadRequestException(errors);
+      },
+    }),
+  );
+  app.useGlobalFilters(new GlobalExceptionFilter(httpLogger));
 
   const configService = app.get(ConfigService);
 
