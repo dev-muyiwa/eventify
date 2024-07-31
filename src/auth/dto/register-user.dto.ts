@@ -7,6 +7,7 @@ import {
   registerDecorator,
   ValidationOptions,
 } from 'class-validator';
+import { PickType } from '@nestjs/mapped-types';
 
 export class RegisterUserDto {
   @IsString({ message: 'First name must be a string' })
@@ -29,6 +30,11 @@ export class RegisterUserDto {
   @IsStrongPassword({}, { message: 'Password is too weak' })
   readonly password: string;
 }
+
+export class LoginUserDto extends PickType(RegisterUserDto, [
+  'email',
+  'password',
+] as const) {}
 
 function IsAdult(validationOptions?: ValidationOptions) {
   return function (object: NonNullable<unknown>, propertyName: string) {

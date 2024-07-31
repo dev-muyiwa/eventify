@@ -1,10 +1,10 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { ConfigService } from '@nestjs/config';
 import { Knex } from 'knex';
+import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
-import { Auth } from './entities/auth.entity';
 
 @Injectable()
 export class AuthService {
@@ -13,9 +13,11 @@ export class AuthService {
     @Inject('KnexConnection') private readonly knex: Knex,
   ) {}
 
-  async create(createAuthDto: RegisterUserDto) {
+  async create(createAuthDto: RegisterUserDto): Promise<User> {
     const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
-    const existingUser = await this.knex('users').where('email', email).first();
+    const existingUser = await this.knex<User>('users')
+      .where('email', email)
+      .first();
     if (existingUser) {
       throw new BadRequestException(
         'an account with this email already exists',
@@ -25,16 +27,30 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    const [newUser] = await this.knex('users')
+    const [newUser] = await this.knex<User>('users')
       .insert({
         first_name: firstName,
         last_name: lastName,
         dob: dateOfBirth,
         email: email,
         password: passwordHash,
-      } as Auth)
+      })
       .returning('*');
     return newUser;
+  }
+
+  async login(loginAuthDto: LoginUserDto) {
+    const { email, password } = loginAuthDto;
+    const existingUser = await this.knex<User>('active_users')
+      .where('email', email)
+      .first();
+    if (
+      !existingUser ||
+      !(await bcrypt.compare(password, existingUser.password))
+    ) {
+      throw new BadRequestException('invalid login credentials');
+    }
+    return existingUser;
   }
 
   findAll() {
