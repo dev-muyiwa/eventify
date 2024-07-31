@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import morgan from 'morgan';
 import { Logger } from 'winston';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -49,6 +50,18 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new GlobalExceptionFilter(httpLogger));
+
+  const config = new DocumentBuilder()
+    .setTitle('Eventify API')
+    .setDescription(
+      'This is the API documentation for the Eventify application',
+    )
+    .build();
+
+  const v1Document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('/v1/docs', app, v1Document, {
+    useGlobalPrefix: true,
+  });
 
   const configService = app.get(ConfigService);
 

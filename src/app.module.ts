@@ -26,6 +26,20 @@ import cors from 'cors';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {
-    consumer.apply(helmet(), cors()).forRoutes('*');
+    consumer
+      .apply(
+        helmet({
+          contentSecurityPolicy: {
+            directives: {
+              defaultSrc: [`'self'`],
+              styleSrc: [`'self'`, `'unsafe-inline'`],
+              imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+              scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+            },
+          },
+        }),
+        cors(),
+      )
+      .forRoutes('*');
   }
 }
