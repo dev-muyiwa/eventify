@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 export default (): EnvConfig => {
   const config = {
     app_name: process.env.APP_NAME,
+    jwt_secret: process.env.JWT_SECRET,
     node_env: process.env.NODE_ENV,
     port: process.env.PORT,
     database: {

@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Knex } from 'knex';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
+  constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
+  async findOneByEmail(email: string): Promise<User | undefined> {
+    return this.knex<User>('users').where('email', email).first();
+  }
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
   }

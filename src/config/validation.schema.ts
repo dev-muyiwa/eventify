@@ -37,6 +37,9 @@ export class EnvConfig {
   @IsString()
   app_name: string;
 
+  @IsString()
+  jwt_secret: string;
+
   @Type(() => Number)
   @IsNumber()
   port: number;
