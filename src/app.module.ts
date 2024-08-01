@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
+import { EventsModule } from './events/events.module';
 import configuration from './config/configuration';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -20,6 +21,7 @@ import cors from 'cors';
     DatabaseModule,
     UserModule,
     AuthModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

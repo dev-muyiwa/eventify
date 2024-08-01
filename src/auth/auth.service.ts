@@ -41,10 +41,10 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { email: user.email, sub: user.id };
-    delete user.created_at
-    delete user.updated_at
-    delete user.deleted_at
-    delete user.password
+    delete user.created_at;
+    delete user.updated_at;
+    delete user.deleted_at;
+    delete user.password;
     return {
       ...user,
       access_token: this.jwtService.sign(payload),

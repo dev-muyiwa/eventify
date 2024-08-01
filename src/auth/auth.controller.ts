@@ -15,7 +15,6 @@ export class AuthController {
   @Post('register')
   async registerUser(@Body() createAuthDto: RegisterUserDto) {
     await this.authService.create(createAuthDto);
-    // send a welcome + verify email to the user
     return success(
       null,
       'user registered successfully. check your email for verification',
