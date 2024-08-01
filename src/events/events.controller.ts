@@ -1,12 +1,19 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {
-  }
+  constructor(private readonly eventsService: EventsService) {}
 
   @Post()
   create(@Body() createEventDto: CreateEventDto) {

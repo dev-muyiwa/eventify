@@ -11,7 +11,8 @@ export class UserService {
     this.user = knex<User>('active_users');
   }
   async findOneByEmail(email: string): Promise<User | undefined> {
-    return this.user.where('email', email).first();
+    const [user] = await this.user.where('email', email);
+    return user;
   }
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';

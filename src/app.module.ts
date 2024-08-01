@@ -1,15 +1,15 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
+import { UserModule } from './user/user.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
-import { EventsModule } from './events/events.module';
-import configuration from './config/configuration';
 import helmet from 'helmet';
 import cors from 'cors';
+import configuration from './config/configuration';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [

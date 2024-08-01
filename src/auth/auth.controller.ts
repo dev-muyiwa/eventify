@@ -1,7 +1,15 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
-import { success } from '../util/function';
+import { SkipAuthorization, success } from '../util/function';
 import { ApiTags } from '@nestjs/swagger';
 import { LocalAuthGuard } from './strategy/local.strategy';
 import { Request } from 'express';
@@ -9,9 +17,9 @@ import { Request } from 'express';
 @Controller('auth')
 @ApiTags('Authentication')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {
-  }
+  constructor(private readonly authService: AuthService) {}
 
+  @SkipAuthorization()
   @Post('register')
   async registerUser(@Body() createAuthDto: RegisterUserDto) {
     await this.authService.create(createAuthDto);
@@ -21,6 +29,7 @@ export class AuthController {
     );
   }
 
+  @SkipAuthorization()
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')
