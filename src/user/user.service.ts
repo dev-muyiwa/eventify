@@ -6,9 +6,12 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
-  constructor(@Inject('KnexConnection') private readonly knex: Knex) {}
+  private readonly user;
+  constructor(@Inject('KnexConnection') private readonly knex: Knex) {
+    this.user = knex<User>('active_users');
+  }
   async findOneByEmail(email: string): Promise<User | undefined> {
-    return this.knex<User>('users').where('email', email).first();
+    return this.user.where('email', email).first();
   }
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
