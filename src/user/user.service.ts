@@ -3,11 +3,12 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Knex } from 'knex';
 import { User } from './entities/user.entity';
+import { KNEX_CONNECTION } from '../database/knexfile';
 
 @Injectable()
 export class UserService {
   private readonly user;
-  constructor(@Inject('KnexConnection') private readonly knex: Knex) {
+  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
     this.user = knex<User>('active_users');
   }
   async findOneByEmail(email: string): Promise<User | undefined> {

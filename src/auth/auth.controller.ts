@@ -16,10 +16,10 @@ import { Request } from 'express';
 
 @Controller('auth')
 @ApiTags('Authentication')
+@SkipAuthorization()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @SkipAuthorization()
   @Post('register')
   async registerUser(@Body() createAuthDto: RegisterUserDto) {
     await this.authService.create(createAuthDto);
@@ -29,7 +29,6 @@ export class AuthController {
     );
   }
 
-  @SkipAuthorization()
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')

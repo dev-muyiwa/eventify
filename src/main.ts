@@ -51,7 +51,6 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new GlobalExceptionFilter(httpLogger));
-  app.useGlobalGuards(new JwtAuthGuard(new Reflector()));
 
   const config = new DocumentBuilder()
     .setTitle('Eventify API')

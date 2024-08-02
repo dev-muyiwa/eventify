@@ -5,12 +5,13 @@ import { Knex } from 'knex';
 import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
+import { KNEX_CONNECTION } from '../database/knexfile';
 
 @Injectable()
 export class AuthService {
   constructor(
     private jwtService: JwtService,
-    @Inject('KnexConnection') private readonly knex: Knex,
+    @Inject(KNEX_CONNECTION) private readonly knex: Knex,
   ) {}
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {

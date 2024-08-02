@@ -10,6 +10,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import configuration from './config/configuration';
 import { EventsModule } from './events/events.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/strategy/jwt.strategy';
 
 @Module({
   imports: [
@@ -24,7 +26,7 @@ import { EventsModule } from './events/events.module';
     EventsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {

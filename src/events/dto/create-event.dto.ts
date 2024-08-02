@@ -1,1 +1,3 @@
-export class CreateEventDto {}
+export class CreateEventDto {
+
+}
