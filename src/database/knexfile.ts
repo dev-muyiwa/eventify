@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import { ConfigService } from '@nestjs/config';
 
-export const KNEX_CONNECTION = 'KnexConnection';
+export const KNEX_CONNECTION = Symbol.for('KnexConnection');
 
 export const getKnexConfig = (configService: ConfigService): Knex.Config => {
   return {

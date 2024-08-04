@@ -15,8 +15,8 @@ create table if not exists events
     name         varchar(100) not null,
     description  text         not null,
     location     text         not null,
-    start_at     timestamptz  not null,
-    end_at       timestamptz  not null,
+    starts_at     timestamptz  not null,
+    ends_at       timestamptz  not null,
     metadata     jsonb        not null default '{}',
 --     relationships
     creator_id   uuid         not null references users (id) on delete restrict,
@@ -24,7 +24,11 @@ create table if not exists events
     created_at   timestamptz  not null default now(),
     updated_at   timestamptz  not null default now(),
     published_at timestamptz           default null,
-    deleted_at   timestamptz           default null
+    deleted_at   timestamptz           default null,
+--     constraints
+    check (starts_at < ends_at),
+    check (starts_at > now()),
+    unique (name, creator_id)
 );
 -- add indexes to the events table
 create index if not exists events_name_index on events (name);

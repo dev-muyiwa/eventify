@@ -19,7 +19,6 @@ function promptForAction() {
 
 function getNextMigrationNumber(migrationsDirPath) {
   const files = fs.readdirSync(migrationsDirPath);
-  console.log(files);
   const migrationFiles = files.filter(file => /^\d{3}\.(do|undo)\.\w+\.sql$/.test(file));
 
   if (migrationFiles.length === 0) {

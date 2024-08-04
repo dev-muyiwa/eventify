@@ -1,4 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
+import { Knex } from 'knex';
 
 export interface Response<T> {
   success: boolean;
@@ -33,3 +34,46 @@ export function error(message: string, err?: any): ErrorResponse<null> {
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const SkipAuthorization = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+export async function paginate<T extends NonNullable<unknown>>(
+  knex: Knex,
+  tableName: string,
+  page: number = 1,
+  orderByColumn = 'created_at',
+  orderDirection = 'asc',
+): Promise<{
+  total: number;
+  data: T[];
+  current_page: number | null;
+  page_size: number;
+  prev_page: string | null;
+  next_page: string | null;
+}> {
+  const pageSize = 20;
+  const offset = (page - 1) * pageSize;
+
+  const dataQuery = knex<T>(tableName)
+    .select('*')
+    .orderBy(orderByColumn, orderDirection)
+    .limit(pageSize)
+    .offset(offset);
+
+  const [data, total] = await Promise.all([
+    dataQuery,
+    knex<T>(tableName).count({ count: '*' }).first(),
+  ]);
+
+  const totalRecords =
+    total && total.count ? parseInt(total.count as string, 10) : 0;
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  return {
+    total: totalRecords,
+    data: data as T[],
+    current_page: page,
+    prev_page: page > 1 ? `?page=${page - 1}&pageSize=${pageSize}` : null,
+    next_page:
+      page < totalPages ? `?page=${page + 1}&pageSize=${pageSize}` : null,
+    page_size: pageSize,
+  };
+}

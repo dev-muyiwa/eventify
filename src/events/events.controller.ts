@@ -6,11 +6,16 @@ import {
   Param,
   Patch,
   Post,
+  Put,
+  Req,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { Request } from 'express';
+import { User } from '../user/entities/user.entity';
+import { success } from '../util/function';
 
 @Controller('events')
 @ApiTags('Events')
@@ -18,27 +23,52 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  create(@Body() createEventDto: CreateEventDto) {
-    return this.eventsService.create(createEventDto);
+  async createEvent(
+    @Req() req: Request,
+    @Body() createEventDto: CreateEventDto,
+  ) {
+    const user = req.user as User;
+    const event = await this.eventsService.createEvent(createEventDto, user.id);
+    return success(event, 'event created');
   }
 
   @Get()
-  findAll() {
-    return this.eventsService.findAll();
+  async findAll() {
+    const events = await this.eventsService.findAllEvents();
+    return success(events, 'events fetched');
   }
 
+  // @Get()
+  // findAllActiveEvents() {
+  //   return this.eventsService.findAllActiveEvents();
+  // }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.eventsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    const event = await this.eventsService.findOne(id);
+    return success(event, 'event fetched');
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.eventsService.update(+id, updateEventDto);
+  async updateEvent(
+    @Param('id') id: string,
+    @Body() updateEventDto: UpdateEventDto,
+  ) {
+    const event = await this.eventsService.updateEvent(id, updateEventDto);
+    return success(event, 'event updated');
+  }
+
+  @Put(':id')
+  async publishEvent(@Req() req: Request, @Param('id') id: string) {
+    const admin = req.user as User;
+    const event = await this.eventsService.publishEvent(id, admin.id);
+    return success(event, 'event updated');
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.eventsService.remove(+id);
+  async deleteEvent(@Req() req: Request, @Param('id') id: string) {
+    const admin = req.user as User;
+    await this.eventsService.deleteEvent(id, admin.id);
+    return success(null, 'event deleted');
   }
 }
