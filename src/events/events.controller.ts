@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
-import { UpdateEventDto } from './dto/update-event.dto';
+import { IdParam, UpdateEventDto } from './dto/update-event.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { User } from '../user/entities/user.entity';
@@ -44,31 +44,34 @@ export class EventsController {
   // }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const event = await this.eventsService.findOne(id);
+  async findOne(@Param() idParam: IdParam) {
+    const event = await this.eventsService.findOne(idParam.id);
     return success(event, 'event fetched');
   }
 
   @Patch(':id')
   async updateEvent(
-    @Param('id') id: string,
+    @Param() idParam: IdParam,
     @Body() updateEventDto: UpdateEventDto,
   ) {
-    const event = await this.eventsService.updateEvent(id, updateEventDto);
+    const event = await this.eventsService.updateEvent(
+      idParam.id,
+      updateEventDto,
+    );
     return success(event, 'event updated');
   }
 
   @Put(':id')
-  async publishEvent(@Req() req: Request, @Param('id') id: string) {
+  async publishEvent(@Req() req: Request, @Param() idParam: IdParam) {
     const admin = req.user as User;
-    const event = await this.eventsService.publishEvent(id, admin.id);
-    return success(event, 'event updated');
+    const event = await this.eventsService.publishEvent(idParam.id, admin.id);
+    return success(event, 'event published');
   }
 
   @Delete(':id')
-  async deleteEvent(@Req() req: Request, @Param('id') id: string) {
+  async deleteEvent(@Req() req: Request, @Param() idParam: IdParam) {
     const admin = req.user as User;
-    await this.eventsService.deleteEvent(id, admin.id);
+    await this.eventsService.deleteEvent(idParam.id, admin.id);
     return success(null, 'event deleted');
   }
 }

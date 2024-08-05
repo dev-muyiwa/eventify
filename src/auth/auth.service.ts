@@ -9,16 +9,18 @@ import { KNEX_CONNECTION } from '../database/knexfile';
 
 @Injectable()
 export class AuthService {
+  private usersQuery: Knex.QueryBuilder<User>;
+
   constructor(
     private jwtService: JwtService,
     @Inject(KNEX_CONNECTION) private readonly knex: Knex,
-  ) {}
+  ) {
+    this.usersQuery = this.knex<User>('users');
+  }
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {
     const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
-    const existingUser = await this.knex<User>('users')
-      .where('email', email)
-      .first();
+    const existingUser = await this.usersQuery.where('email', email).first();
     if (existingUser) {
       throw new BadRequestException(
         'an account with this email already exists',
@@ -28,7 +30,7 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    const [newUser] = await this.knex<User>('users')
+    const [newUser] = await this.usersQuery
       .insert({
         first_name: firstName,
         last_name: lastName,

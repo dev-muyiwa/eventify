@@ -6,5 +6,5 @@ export class Event {
   readonly ends_at: Date;
   readonly location: string;
   readonly creator_id: string;
-  readonly published_at?: Date;
+  readonly published_at?: Date | null;
 }

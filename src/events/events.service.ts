@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { KNEX_CONNECTION } from '../database/knexfile';
@@ -8,18 +13,25 @@ import { paginate } from '../util/function';
 
 @Injectable()
 export class EventsService {
-  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {}
+  private eventsQuery: Knex.QueryBuilder<Event>;
+  private activeEventsQuery: Knex.QueryBuilder<Event>;
+
+  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
+    this.eventsQuery = this.knex<Event>('events');
+    this.activeEventsQuery = this.knex<Event>('active_events');
+  }
+
   async createEvent(createEventDto: CreateEventDto, creatorId: string) {
     const { name, description, startDate, endDate, location } = createEventDto;
-    const existingEvent = await this.knex<Event>('events')
+    const existingEvent = await this.activeEventsQuery
       .where('name', name)
       .andWhere('creator_id', creatorId)
       .first();
 
     if (existingEvent) {
-      throw new BadRequestException('An event with this name already exists');
+      throw new BadRequestException('an event with this name already exists');
     }
-    const [newEvent] = await this.knex<Event>('events')
+    const [newEvent] = await this.eventsQuery
       .insert({
         name: name,
         description: description,
@@ -49,43 +61,70 @@ export class EventsService {
   }
 
   async findOne(id: string) {
-    const event = await this.knex<Event>('events').where('id', id).first();
+    const event = await this.eventsQuery.where('id', id).first();
     if (!event) {
-      throw new BadRequestException('event not found');
+      throw new EventNotFoundException();
     }
     return event;
   }
 
   async updateEvent(id: string, updateEventDto: UpdateEventDto) {
-    return `This action updates a #${id} event`;
-  }
-
-  async publishEvent(id: string, creatorId: string) {
-    let event = await this.knex<Event>('events')
-      .where({ id: id, creator_id: creatorId })
-      .first();
+    const { name, description, startDate, endDate, location } = updateEventDto;
+    const event = await this.eventsQuery.where('id', id).first();
     if (!event) {
-      throw new BadRequestException('event not found');
+      throw new EventNotFoundException();
     }
 
     if (event.published_at) {
       throw new BadRequestException('event already published');
     }
 
-    event = await this.knex<Event>('events')
+    const [updatedEvent] = await this.eventsQuery
+      .where('id', id)
+      .update({
+        name: name || event.name,
+        description: description || event.description,
+        starts_at: startDate || event.starts_at,
+        ends_at: endDate || event.ends_at,
+        location: location || event.location,
+      } as Event)
+      .returning('*');
+
+    return updatedEvent;
+  }
+
+  async publishEvent(id: string, creatorId: string) {
+    const event = await this.eventsQuery
+      .where({ id: id, creator_id: creatorId })
+      .first();
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+
+    if (event.published_at) {
+      throw new BadRequestException('event already published');
+    }
+
+    const [publishedEvent] = await this.eventsQuery
       .where('id', id)
       .update({ published_at: new Date() })
-      .select('*');
+      .returning('*');
 
-    return event;
+    return publishedEvent;
   }
 
   async deleteEvent(id: string, creatorId: string) {
-    const event = await this.knex<Event>('events')
+    const event = await this.eventsQuery
       .where({ id: id, creator_id: creatorId })
       .delete();
     if (event === 0) {
-      throw new BadRequestException('event not found');
+      throw new EventNotFoundException();
     }
+  }
+}
+
+export class EventNotFoundException extends NotFoundException {
+  constructor() {
+    super('event not found');
   }
 }
