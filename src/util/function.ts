@@ -1,4 +1,3 @@
-import { SetMetadata } from '@nestjs/common';
 import { Knex } from 'knex';
 
 export interface Response<T> {
@@ -31,9 +30,6 @@ export function error(message: string, err?: any): ErrorResponse<null> {
     message,
   };
 }
-
-export const IS_PUBLIC_KEY = 'isPublic';
-export const SkipAuthorization = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 export async function paginate<T extends NonNullable<unknown>>(
   knex: Knex,

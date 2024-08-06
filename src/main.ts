@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
   BadRequestException,
@@ -11,7 +11,6 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import morgan from 'morgan';
 import { Logger } from 'winston';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { JwtAuthGuard } from './auth/strategy/jwt.strategy';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

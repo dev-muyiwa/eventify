@@ -11,7 +11,9 @@ import cors from 'cors';
 import configuration from './config/configuration';
 import { EventsModule } from './events/events.module';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/strategy/jwt.strategy';
+import { JwtAuthGuard } from './auth/guards/jwt.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -19,6 +21,10 @@ import { JwtAuthGuard } from './auth/strategy/jwt.strategy';
       isGlobal: true,
       load: [configuration],
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
     LoggerModule,
     DatabaseModule,
     UserModule,
@@ -26,7 +32,12 @@ import { JwtAuthGuard } from './auth/strategy/jwt.strategy';
     EventsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {

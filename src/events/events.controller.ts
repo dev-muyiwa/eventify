@@ -14,8 +14,9 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { IdParam, UpdateEventDto } from './dto/update-event.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
-import { User } from '../user/entities/user.entity';
+import { User, UserRole } from '../user/entities/user.entity';
 import { success } from '../util/function';
+import { Roles } from '../auth/guards/roles.guard';
 
 @Controller('events')
 @ApiTags('Events')
@@ -23,6 +24,7 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
+  @Roles(UserRole.ORGANIZER)
   async createEvent(
     @Req() req: Request,
     @Body() createEventDto: CreateEventDto,
@@ -33,6 +35,7 @@ export class EventsController {
   }
 
   @Get()
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   async findAll() {
     const events = await this.eventsService.findAllEvents();
     return success(events, 'events fetched');
@@ -50,6 +53,7 @@ export class EventsController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ORGANIZER)
   async updateEvent(
     @Param() idParam: IdParam,
     @Body() updateEventDto: UpdateEventDto,
@@ -62,6 +66,7 @@ export class EventsController {
   }
 
   @Put(':id')
+  @Roles(UserRole.ORGANIZER)
   async publishEvent(@Req() req: Request, @Param() idParam: IdParam) {
     const admin = req.user as User;
     const event = await this.eventsService.publishEvent(idParam.id, admin.id);
@@ -69,6 +74,7 @@ export class EventsController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   async deleteEvent(@Req() req: Request, @Param() idParam: IdParam) {
     const admin = req.user as User;
     await this.eventsService.deleteEvent(idParam.id, admin.id);

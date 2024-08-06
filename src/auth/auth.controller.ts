@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
-import { SkipAuthorization, success } from '../util/function';
+import { success } from '../util/function';
 import { ApiTags } from '@nestjs/swagger';
-import { LocalAuthGuard } from './strategy/local.strategy';
 import { Request } from 'express';
+import { SkipAuthorization } from './guards/jwt.guard';
+import { LocalAuthGuard } from './guards/local.guard';
 
 @Controller('auth')
 @ApiTags('Authentication')

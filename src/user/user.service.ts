@@ -7,16 +7,19 @@ import { KNEX_CONNECTION } from '../database/knexfile';
 
 @Injectable()
 export class UserService {
-  private readonly user;
+  private readonly activeUserQuery;
   constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
-    this.user = knex<User>('active_users');
+    this.activeUserQuery = knex<User>('active_users');
   }
   async findOneByEmail(email: string): Promise<User | undefined> {
-    const [user] = await this.user.where('email', email);
+    const [user] = await this.activeUserQuery
+      .where('email', email)
+      .returning('*');
+    console.log('activeUserQuery', user);
     return user;
   }
   create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+    return 'This action adds a new activeUserQuery';
   }
 
   findAll() {
