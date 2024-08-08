@@ -52,7 +52,7 @@
     "@nestjs/cli": "^10.0.0",
     "@nestjs/microservices": "^10.3.9",
     "@nestjs/schematics": "^10.0.0",
-    "@nestjs/testing": "^10.0.0",
+    "@nestjs/testing": "^10.3.10",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/dotenv": "^8.2.0",

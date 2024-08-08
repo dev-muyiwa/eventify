@@ -15,7 +15,6 @@ export class UserService {
     const [user] = await this.activeUserQuery
       .where('email', email)
       .returning('*');
-    console.log('activeUserQuery', user);
     return user;
   }
   create(createUserDto: CreateUserDto) {
