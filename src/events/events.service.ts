@@ -21,7 +21,7 @@ export class EventsService {
     this.activeEventsQuery = this.knex<Event>('active_events');
   }
 
-  async createEvent(createEventDto: CreateEventDto, creatorId: string) {
+  async createEvent( creatorId: string, createEventDto: CreateEventDto) {
     const { name, description, startDate, endDate, location } = createEventDto;
     const existingEvent = await this.activeEventsQuery
       .where('name', name)
@@ -68,9 +68,9 @@ export class EventsService {
     return event;
   }
 
-  async updateEvent(id: string, updateEventDto: UpdateEventDto) {
+  async updateEvent(eventId: string, updateEventDto: UpdateEventDto) {
     const { name, description, startDate, endDate, location } = updateEventDto;
-    const event = await this.eventsQuery.where('id', id).first();
+    const event = await this.eventsQuery.where('id', eventId).first();
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -80,7 +80,7 @@ export class EventsService {
     }
 
     const [updatedEvent] = await this.eventsQuery
-      .where('id', id)
+      .where('id', eventId)
       .update({
         name: name || event.name,
         description: description || event.description,
@@ -93,9 +93,9 @@ export class EventsService {
     return updatedEvent;
   }
 
-  async publishEvent(id: string, creatorId: string) {
+  async publishEvent(eventId: string, creatorId: string) {
     const event = await this.eventsQuery
-      .where({ id: id, creator_id: creatorId })
+      .where({ id: eventId, creator_id: creatorId })
       .first();
     if (!event) {
       throw new EventNotFoundException();
@@ -106,16 +106,16 @@ export class EventsService {
     }
 
     const [publishedEvent] = await this.eventsQuery
-      .where('id', id)
+      .where('id', eventId)
       .update({ published_at: new Date() })
       .returning('*');
 
     return publishedEvent;
   }
 
-  async deleteEvent(id: string, creatorId: string) {
+  async deleteEvent(eventId: string, creatorId: string) {
     const event = await this.eventsQuery
-      .where({ id: id, creator_id: creatorId })
+      .where({ id: eventId, creator_id: creatorId })
       .delete();
     if (event === 0) {
       throw new EventNotFoundException();

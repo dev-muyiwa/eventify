@@ -30,21 +30,21 @@ export class EventsController {
     @Body() createEventDto: CreateEventDto,
   ) {
     const user = req.user as User;
-    const event = await this.eventsService.createEvent(createEventDto, user.id);
+    const event = await this.eventsService.createEvent( user.id, createEventDto);
     return success(event, 'event created');
   }
 
   @Get()
-  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   async findAll() {
-    const events = await this.eventsService.findAllEvents();
+    const events = await this.eventsService.findAllActiveEvents();
     return success(events, 'events fetched');
   }
 
-  // @Get()
-  // findAllActiveEvents() {
-  //   return this.eventsService.findAllActiveEvents();
-  // }
+  @Get()
+  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  findAllActiveEvents() {
+    return this.eventsService.findAllActiveEvents();
+  }
 
   @Get(':id')
   async findOne(@Param() idParam: IdParam) {
