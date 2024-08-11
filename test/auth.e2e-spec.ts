@@ -1,27 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  BadRequestException,
-  INestApplication,
-  ValidationPipe,
-} from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from '@testcontainers/postgresql';
-import { ConfigService } from '@nestjs/config';
-import * as process from 'node:process';
+import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import {
   LoginUserDto,
   RegisterUserDto,
 } from '../src/auth/dto/register-user.dto';
 import { Knex } from 'knex';
-import { KNEX_CONNECTION } from '../src/database/knexfile';
 import { User } from '../src/user/entities/user.entity';
-import { GlobalExceptionFilter } from '../src/util/exception.filter';
-import { Logger } from 'winston';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { setupTestConfig } from './setup';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -29,53 +15,10 @@ describe('AuthController (e2e)', () => {
   let knex: Knex;
 
   beforeAll(async () => {
-    process.env.NODE_ENV = 'test';
-
-    container = await new PostgreSqlContainer()
-      .withName('test-postgres')
-      .withDatabase(process.env.POSTGRES_DB as string)
-      .withUsername(process.env.POSTGRES_USER as string)
-      .withPassword(process.env.POSTGRES_PASSWORD as string)
-      .start();
-
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(ConfigService)
-      .useValue({
-        get: (key: string) => {
-          switch (key) {
-            case 'database.host':
-              return container.getHost();
-            case 'database.port':
-              return container.getPort();
-            case 'database.user':
-              return container.getUsername();
-            case 'database.password':
-              return container.getPassword();
-            case 'database.name':
-              return container.getDatabase();
-            default:
-              return process.env[key];
-          }
-        },
-      })
-      .compile();
-    app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(
-      new ValidationPipe({
-        transform: true,
-        exceptionFactory: (errors) => {
-          return new BadRequestException(errors);
-        },
-      }),
-    );
-    app.useGlobalFilters(
-      new GlobalExceptionFilter(app.get<Logger>(WINSTON_MODULE_PROVIDER)),
-    );
-
-    knex = app.get(KNEX_CONNECTION);
-    await app.init();
+    const setup = await setupTestConfig();
+    app = setup.app;
+    container = setup.container;
+    knex = setup.knex;
   });
 
   afterAll(async () => {

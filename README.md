@@ -1,73 +1,111 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Eventify
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Eventify is a robust event booking system designed for managing events, ticketing, and payments. Built with NestJS and Docker, Eventify offers a modern, scalable solution for event-based applications with integrated Swagger documentation and rate limiting.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
-
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Event Management:** Create, update, and manage events.
+- **Ticket Booking:** Allows users to book tickets for events.
+- **Payment Integration:** Handles payments in multiple currencies (NGN, CAD, EUR).
+- **Role-Based Access Control (RBAC):** Admin section with different user roles.
+- **Logging and Monitoring:** Integrated with Winston, Grafana, Loki, and Prometheus.
+- **API Documentation:** Interactive API documentation using Swagger.
+- **Rate Limiting:** Prevents abuse and ensures fair usage.
+- **Dockerized Setup:** Easy deployment using Docker.
 
 ## Installation
 
-```bash
-$ npm install
+### Using Docker
+
+1. **Clone the Repository:**
+
+    ```bash
+    git clone https://github.com/dev-muyiwa/eventify.git
+    cd eventify
+    ```
+
+2. **Build and Run the Docker Containers:**
+
+   Ensure Docker and Docker Compose are installed, then run:
+
+    ```bash
+    docker-compose up --build
+    ```
+
+3. **Access the Application:**
+
+   The application will be available at `http://localhost:3000`.
+
+4. **Swagger Documentation:**
+
+   Access the API documentation at:
+
+    ```
+    http://localhost:3000/api/v1/docs
+    ```
+
+### Manual Installation
+
+1. **Clone the Repository:**
+
+    ```bash
+    git clone https://github.com/dev-muyiwa/eventify.git
+    cd eventify
+    ```
+
+2. **Install Dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3. **Configure Environment Variables:**
+
+   Create a `.env` file in the root directory and add your configuration. You can use the `.env.example` file as a reference.
+
+4. **Run Migrations:**
+
+   Ensure your PostgreSQL database is set up, and run:
+
+    ```bash
+    npm run migrate
+    ```
+
+5. **Start the Application:**
+
+    ```bash
+    npm run start:dev
+    ```
+
+## Usage
+
+### Swagger Documentation
+
+Explore and test the API endpoints using Swagger at:
+
+```
+http://localhost:3000/api/v1/docs
 ```
 
-## Running the app
+## Contributing
 
-```bash
-# development
-$ npm run start
+Contributions are welcome! To contribute:
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Test
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+1. Fork the repository.
+2. Create a new branch (`git checkout -b feature/YourFeature`).
+3. Commit your changes (`git commit -am 'Add new feature'`).
+4. Push the branch (`git push origin feature/YourFeature`).
+5. Create a Pull Request.
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Additional Information
+
+- **Documentation:** Visit [Documentation Link](#) for more information.
+- **Issues:** Report issues in the [Issues section](https://github.com/dev-muyiwa/eventify/issues).
+
+---
+
+Feel free to adjust any section or add more details as necessary!
