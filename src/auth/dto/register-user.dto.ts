@@ -34,6 +34,16 @@ export class RegisterUserDto {
   @ApiProperty({ example: 'Password123?' })
   @IsStrongPassword({}, { message: 'Password is too weak' })
   readonly password: string;
+
+  static generateTestObject(): RegisterUserDto {
+    return {
+      firstName: 'John',
+      lastName: 'Doe',
+      dateOfBirth: new Date('1998-05-10'),
+      email: 'john@doe.com',
+      password: 'Password-123?',
+    };
+  }
 }
 
 export class LoginUserDto extends PickType(RegisterUserDto, [

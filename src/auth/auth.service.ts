@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
 import { Knex } from 'knex';
 import { User } from '../user/entities/user.entity';
@@ -21,7 +26,7 @@ export class AuthService {
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {
     const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
-    const existingUser = await this.usersQuery.where('email', email).first();
+    const existingUser = await this.userService.findOneByEmail(email);
     if (existingUser) {
       throw new BadRequestException(
         'an account with this email already exists',
@@ -47,18 +52,20 @@ export class AuthService {
     const { email, password } = loginDto;
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
-      throw new BadRequestException('incorrect login credentials');
+      throw new NotFoundException('incorrect login credentials');
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new BadRequestException('incorrect login credentials');
+      throw new NotFoundException('incorrect login credentials');
     }
-    const payload = {
-      id: user.id,
-      email: user.email,
-    };
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(
+        { email: email },
+        {
+          subject: user.id,
+        },
+      ),
     };
   }
 }

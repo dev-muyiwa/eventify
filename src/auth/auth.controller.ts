@@ -9,8 +9,7 @@ import { SkipAuthorization } from './guards/jwt.guard';
 @ApiTags('Authentication')
 @SkipAuthorization()
 export class AuthController {
-  constructor(private readonly authService: AuthService) {
-  }
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async registerUser(@Body() createAuthDto: RegisterUserDto) {
