@@ -1,10 +1,11 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
 import { Knex } from 'knex';
 import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { KNEX_CONNECTION } from '../database/knexfile';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
 
   constructor(
     private jwtService: JwtService,
+    private userService: UserService,
     @Inject(KNEX_CONNECTION) private readonly knex: Knex,
   ) {
     this.usersQuery = this.knex<User>('users');
@@ -41,12 +43,20 @@ export class AuthService {
     return newUser;
   }
 
-  async login(user: any) {
-    const payload = { email: user.email, sub: user.id };
-    delete user.created_at;
-    delete user.updated_at;
-    delete user.deleted_at;
-    delete user.password;
+  async login(loginDto: LoginUserDto) {
+    const { email, password } = loginDto;
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) {
+      throw new BadRequestException('incorrect login credentials');
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new BadRequestException('incorrect login credentials');
+    }
+    const payload = {
+      id: user.id,
+      email: user.email,
+    };
     return {
       access_token: this.jwtService.sign(payload),
     };

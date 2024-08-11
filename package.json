@@ -40,7 +40,6 @@
     "morgan": "^1.10.0",
     "nest-winston": "^1.9.7",
     "passport-jwt": "^4.0.1",
-    "passport-local": "^1.0.0",
     "pg": "^8.12.0",
     "postgrator": "^5.0.0",
     "reflect-metadata": "^0.2.0",
@@ -62,7 +61,6 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.3.1",
     "@types/passport-jwt": "^4.0.1",
-    "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.11.6",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -94,7 +92,9 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "setupFilesAfterEnv": ["../test/test-setup.ts"],
+    "setupFilesAfterEnv": [
+      "../test/test-setup.ts"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

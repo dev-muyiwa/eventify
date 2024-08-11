@@ -6,7 +6,7 @@ import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers
 import { ConfigService } from '@nestjs/config';
 import * as process from 'node:process';
 
-describe('AppController (e2e)', () => {
+describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let container: StartedPostgreSqlContainer;
 
@@ -51,9 +51,9 @@ describe('AppController (e2e)', () => {
     await container.stop();
   });
 
-  it('/health (GET)', () => {
+  it('/auth/register (POST)', () => {
     return request(app.getHttpServer())
-      .get('/health')
+      .post('/auth/register')
       .expect(200)
       .expect('Hello World!');
   });
