@@ -1,5 +1,15 @@
-import {CreateUserDto} from './create-user.dto';
-import {OmitType} from "@nestjs/mapped-types/dist";
+import { RegisterUserDto } from '../../auth/dto/register-user.dto';
+import { IsOptional, IsString } from 'class-validator';
+import { PartialType, OmitType } from '@nestjs/swagger';
 
-export class UpdateUserDto extends OmitType(CreateUserDto, ['password', 'email']) {
+export class UpdateUserDto extends PartialType(
+  OmitType(RegisterUserDto, ['password', 'email']),
+) {
+  @IsOptional()
+  @IsString()
+  readonly bio: string;
+
+  @IsOptional()
+  @IsString()
+  readonly location: string;
 }

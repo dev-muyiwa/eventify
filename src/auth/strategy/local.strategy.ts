@@ -1,6 +1,6 @@
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
 import bcrypt from 'bcryptjs';
 
@@ -13,11 +13,11 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   async validate(email: string, password: string): Promise<any> {
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
-      throw new UnauthorizedException();
+      throw new BadRequestException('incorrect login credentials');
     }
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException();
+      throw new BadRequestException('incorrect login credentials');
     }
 
     return user;

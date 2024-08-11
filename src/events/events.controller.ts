@@ -30,7 +30,7 @@ export class EventsController {
     @Body() createEventDto: CreateEventDto,
   ) {
     const user = req.user as User;
-    const event = await this.eventsService.createEvent( user.id, createEventDto);
+    const event = await this.eventsService.createEvent(user.id, createEventDto);
     return success(event, 'event created');
   }
 

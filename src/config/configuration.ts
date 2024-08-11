@@ -1,12 +1,7 @@
 import * as process from 'node:process';
-import dotenv from 'dotenv';
 import { EnvConfig } from './validation.schema';
 import { plainToInstance } from 'class-transformer';
 import { validateSync, ValidationError } from 'class-validator';
-import * as path from 'node:path';
-
-const envFile = `.env.${process.env.NODE_ENV || 'local'}`;
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
 
 export default (): EnvConfig => {
   const config = {

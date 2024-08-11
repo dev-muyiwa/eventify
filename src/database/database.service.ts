@@ -1,4 +1,4 @@
-import { Injectable, Inject, OnModuleInit } from '@nestjs/common';
+import { Injectable, Inject, OnModuleInit, Optional } from '@nestjs/common';
 import { knex, Knex } from 'knex';
 import Postgrator from 'postgrator';
 import { ConfigService } from '@nestjs/config';
@@ -14,8 +14,9 @@ export class DatabaseService implements OnModuleInit {
   constructor(
     private readonly configService: ConfigService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    @Optional() overrideConfig?: Knex.Config,
   ) {
-    const dbConfig = getKnexConfig(configService);
+    const dbConfig = overrideConfig || getKnexConfig(configService);
     this.knexConnection = knex(dbConfig);
   }
 
@@ -84,7 +85,10 @@ export class DatabaseService implements OnModuleInit {
     }
   }
 
-  getKnexConnection(): Knex {
+  getKnexConnection(overrideConfig?: Knex.Config): Knex {
+    if (overrideConfig) {
+      return knex(overrideConfig);
+    }
     return this.knexConnection;
   }
 }

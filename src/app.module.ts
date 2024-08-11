@@ -20,11 +20,14 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     LoggerModule,
     DatabaseModule,
     UserModule,

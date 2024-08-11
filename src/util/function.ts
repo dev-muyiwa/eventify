@@ -1,4 +1,5 @@
 import { Knex } from 'knex';
+import { Event } from '../events/entities/event.entity';
 
 export interface Response<T> {
   success: boolean;
@@ -32,8 +33,7 @@ export function error(message: string, err?: any): ErrorResponse<null> {
 }
 
 export async function paginate<T extends NonNullable<unknown>>(
-  knex: Knex,
-  tableName: string,
+  queryBuilder: Knex.QueryBuilder<T>,
   page: number = 1,
   orderByColumn = 'created_at',
   orderDirection = 'asc',
@@ -48,7 +48,8 @@ export async function paginate<T extends NonNullable<unknown>>(
   const pageSize = 20;
   const offset = (page - 1) * pageSize;
 
-  const dataQuery = knex<T>(tableName)
+  const dataQuery = queryBuilder
+    .clone()
     .select('*')
     .orderBy(orderByColumn, orderDirection)
     .limit(pageSize)
@@ -56,7 +57,7 @@ export async function paginate<T extends NonNullable<unknown>>(
 
   const [data, total] = await Promise.all([
     dataQuery,
-    knex<T>(tableName).count({ count: '*' }).first(),
+    queryBuilder.clone().count('id'),
   ]);
 
   const totalRecords =

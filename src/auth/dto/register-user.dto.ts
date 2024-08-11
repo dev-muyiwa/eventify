@@ -7,26 +7,31 @@ import {
   registerDecorator,
   ValidationOptions,
 } from 'class-validator';
-import { PickType } from '@nestjs/mapped-types';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 
 export class RegisterUserDto {
+  @ApiProperty({ example: 'John' })
   @IsString({ message: 'First name must be a string' })
   @IsNotEmpty({ message: 'First name is required' })
   readonly firstName: string;
 
+  @ApiProperty({ example: 'Doe' })
   @IsString({ message: 'First name must be a string' })
   @IsNotEmpty({ message: 'First name is required' })
   readonly lastName: string;
 
+  @ApiProperty({ example: '1998-05-10' })
   @IsDateString({ strict: true }, { message: 'Invalid date of birth format' })
   @IsAdult({
     message: 'Date of birth must indicate an age of at least 18 years',
   })
   readonly dateOfBirth: Date;
 
+  @ApiProperty({ example: 'john@doe.com' })
   @IsEmail({}, { message: 'Invalid email format' })
   readonly email: string;
 
+  @ApiProperty({ example: 'Password123?' })
   @IsStrongPassword({}, { message: 'Password is too weak' })
   readonly password: string;
 }

@@ -13,20 +13,19 @@ import { paginate } from '../util/function';
 
 @Injectable()
 export class EventsService {
-  private eventsQuery: Knex.QueryBuilder<Event>;
-  private activeEventsQuery: Knex.QueryBuilder<Event>;
+  private readonly eventsQuery: Knex.QueryBuilder<Event>;
+  private readonly activeEventsQuery: Knex.QueryBuilder<Event>;
 
   constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
     this.eventsQuery = this.knex<Event>('events');
     this.activeEventsQuery = this.knex<Event>('active_events');
   }
 
-  async createEvent( creatorId: string, createEventDto: CreateEventDto) {
+  async createEvent(creatorId: string, createEventDto: CreateEventDto) {
     const { name, description, startDate, endDate, location } = createEventDto;
-    const existingEvent = await this.activeEventsQuery
+    const [existingEvent] = await this.activeEventsQuery
       .where('name', name)
-      .andWhere('creator_id', creatorId)
-      .first();
+      .andWhere('creator_id', creatorId);
 
     if (existingEvent) {
       throw new BadRequestException('an event with this name already exists');
@@ -47,13 +46,12 @@ export class EventsService {
 
   async findAllEvents() {
     //todo( add sorting and filtering)
-    return await paginate<Event>(this.knex, 'events', 1);
+    return await paginate<Event>(this.eventsQuery, 1);
   }
 
   async findAllActiveEvents() {
     return await paginate<Event>(
-      this.knex,
-      'active_events',
+      this.activeEventsQuery,
       1,
       'created_at',
       'desc',
@@ -61,7 +59,7 @@ export class EventsService {
   }
 
   async findOne(id: string) {
-    const event = await this.eventsQuery.where('id', id).first();
+    const [event] = await this.eventsQuery.where('id', id);
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -70,7 +68,7 @@ export class EventsService {
 
   async updateEvent(eventId: string, updateEventDto: UpdateEventDto) {
     const { name, description, startDate, endDate, location } = updateEventDto;
-    const event = await this.eventsQuery.where('id', eventId).first();
+    const [event] = await this.eventsQuery.where('id', eventId);
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -94,9 +92,10 @@ export class EventsService {
   }
 
   async publishEvent(eventId: string, creatorId: string) {
-    const event = await this.eventsQuery
-      .where({ id: eventId, creator_id: creatorId })
-      .first();
+    const [event] = await this.eventsQuery.where({
+      id: eventId,
+      creator_id: creatorId,
+    });
     if (!event) {
       throw new EventNotFoundException();
     }

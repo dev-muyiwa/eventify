@@ -1,6 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { RegisterUserDto } from './dto/register-user.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { Knex } from 'knex';
 import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
@@ -49,24 +48,7 @@ export class AuthService {
     delete user.deleted_at;
     delete user.password;
     return {
-      ...user,
       access_token: this.jwtService.sign(payload),
     };
-  }
-
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
   }
 }

@@ -8,9 +8,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterUserDto } from './dto/register-user.dto';
+import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
 import { success } from '../util/function';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { SkipAuthorization } from './guards/jwt.guard';
 import { LocalAuthGuard } from './guards/local.guard';
@@ -30,6 +30,7 @@ export class AuthController {
     );
   }
 
+  @ApiBody({ type: LoginUserDto })
   @UseGuards(LocalAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('login')

@@ -1,23 +1,59 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { AppModule } from './../src/app.module';
+import request from 'supertest';
+import { AppModule } from '../src/app.module';
+import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
+import { ConfigService } from '@nestjs/config';
+import * as process from 'node:process';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let container: StartedPostgreSqlContainer;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
+
+    container = await new PostgreSqlContainer()
+      .withDatabase(process.env.POSTGRES_DB as string)
+      .withUsername(process.env.POSTGRES_USER as string)
+      .withPassword(process.env.POSTGRES_PASSWORD as string)
+      .start();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
-
+    })
+      .overrideProvider(ConfigService)
+      .useValue({
+        get: (key: string) => {
+          switch (key) {
+            case 'database.host':
+              return container.getHost();
+            case 'database.port':
+              return container.getPort(); // Ensure port is a string
+            case 'database.user':
+              return container.getUsername();
+            case 'database.password':
+              return container.getPassword();
+            case 'database.name':
+              return container.getDatabase();
+            default:
+              return process.env[key]; // Fallback to .env.test variables
+          }
+        },
+      })
+      .compile();
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  afterAll(async () => {
+    await app.close();
+    await container.stop();
+  });
+
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
       .expect('Hello World!');
   });

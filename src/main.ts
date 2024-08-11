@@ -52,6 +52,7 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter(httpLogger));
 
   const config = new DocumentBuilder()
+    .addBearerAuth()
     .setTitle('Eventify API')
     .setDescription(
       'This is the API documentation for the Eventify application',
