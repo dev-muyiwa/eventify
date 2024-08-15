@@ -58,8 +58,11 @@ export class UserController {
     @Body() updatePasswordDto: UpdatePasswordDto,
   ) {
     const user = req.user as User;
-    await this.userService.updateUserPassword(user.id, updatePasswordDto);
-    return success(null, 'user password updated');
+    const userId = await this.userService.updateUserPassword(
+      user.id,
+      updatePasswordDto,
+    );
+    return success(userId, 'user password updated');
   }
 
   @Roles(UserRole.ADMIN)

@@ -8,6 +8,8 @@ import {
   ValidationOptions,
 } from 'class-validator';
 import { ApiProperty, PickType } from '@nestjs/swagger';
+import { faker } from '@faker-js/faker';
+import bcrypt from 'bcryptjs';
 
 export class RegisterUserDto {
   @ApiProperty({ example: 'John' })
@@ -35,13 +37,18 @@ export class RegisterUserDto {
   @IsStrongPassword({}, { message: 'Password is too weak' })
   readonly password: string;
 
-  static generateTestObject(): RegisterUserDto {
+  static generateTestObject(isRandom: boolean = false): RegisterUserDto {
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync('Password-123?', salt);
+
     return {
-      firstName: 'John',
-      lastName: 'Doe',
+      firstName: isRandom ? faker.person.firstName() : 'John',
+      lastName: isRandom ? faker.person.lastName() : 'Doe',
       dateOfBirth: new Date('1998-05-10'),
-      email: 'john@doe.com',
-      password: 'Password-123?',
+      email: isRandom
+        ? faker.internet.email().toLowerCase()
+        : 'john.doe@test.com',
+      password: passwordHash,
     };
   }
 }

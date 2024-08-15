@@ -6,15 +6,18 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from '../user/user.module';
+import { BullModule } from '@nestjs/bullmq';
+import { BullTypes } from '../config/types';
 
 @Module({
   imports: [
     UserModule,
+    BullModule.registerQueue({ name: BullTypes.EMAIL }),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('jwt_secret'),
         signOptions: { expiresIn: '1h' },
       }),
       inject: [ConfigService],
@@ -24,4 +27,5 @@ import { UserModule } from '../user/user.module';
   providers: [AuthService, JwtStrategy],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule {
+}

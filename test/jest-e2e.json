@@ -8,5 +8,6 @@
   },
   "testTimeout": 10000,
   "detectOpenHandles": true,
-  "verbose": true
+  "verbose": true,
+  "clearMocks": true
 }

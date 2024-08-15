@@ -16,6 +16,18 @@ export default (): EnvConfig => {
       password: process.env.POSTGRES_PASSWORD,
       name: process.env.POSTGRES_DB,
     },
+    redis: {
+      host: process.env.REDIS_HOST,
+      port: process.env.REDIS_PORT,
+    },
+    email: {
+      host: process.env.MAIL_HOST,
+      port: process.env.MAIL_PORT,
+      user: process.env.MAIL_USER,
+      password: process.env.MAIL_PASSWORD,
+      from: process.env.MAIL_FROM,
+      secure: process.env.MAIL_TLS === 'yes' ? 'true' : 'false',
+    },
   };
 
   const configInstance = plainToInstance(EnvConfig, config);

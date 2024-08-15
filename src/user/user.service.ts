@@ -18,7 +18,7 @@ export class UserService {
     this.activeUserQuery = knex<User>('active_users');
   }
 
-  async findOneByEmail(email: string): Promise<User | undefined> {
+  async findOneByEmail(email: string): Promise<User | null> {
     const [user] = await this.activeUserQuery
       .where('email', email)
       .returning('*');
@@ -77,7 +77,11 @@ export class UserService {
       salt,
     );
 
-    await this.userQuery.where('id', userId).update({ password: passwordHash });
+    await this.userQuery
+      .where('id', user.id)
+      .update({ password: passwordHash });
+
+    return { id: user.id };
   }
 
   async deactivateAccount(userId: string) {

@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -14,6 +14,10 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
+import { BullTypes, NODEMAILER_TRANSPORTER } from './config/types';
+import nodemailer from 'nodemailer';
+import { EmailProcessor } from './util/email.processor';
 
 @Module({
   imports: [
@@ -28,6 +32,16 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
         limit: 10,
       },
     ]),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService) => ({
+        connection: {
+          host: configService.get('redis.host'),
+          port: configService.get('redis.port'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     LoggerModule,
     DatabaseModule,
     UserModule,
@@ -40,7 +54,28 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    {
+      provide: NODEMAILER_TRANSPORTER,
+      useFactory: async (configService: ConfigService) => {
+        return nodemailer.createTransport({
+          host: configService.get<string>('email.host'),
+          port: configService.get<number>('email.port'),
+          secure: configService.get<boolean>('email.secure'),
+          auth: {
+            user: configService.get<string>('email.user'),
+            pass: configService.get<string>('email.password'),
+          },
+          from: {
+            name: configService.get<string>('app_name') as string,
+            address: configService.get<string>('email.from') as string,
+          },
+        });
+      },
+      inject: [ConfigService],
+    },
+    EmailProcessor,
   ],
+  exports: [NODEMAILER_TRANSPORTER],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {

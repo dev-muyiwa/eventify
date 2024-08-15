@@ -15,6 +15,8 @@ services:
     depends_on:
       postgres-db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - api-network
 
@@ -37,6 +39,24 @@ services:
       - '${POSTGRES_PORT}:5432'
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - api-network
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    env_file:
+      - .env.development
+    ports:
+      - '${REDIS_PORT}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - api-network
 
