@@ -27,5 +27,4 @@ import { BullTypes } from '../config/types';
   providers: [AuthService, JwtStrategy],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {
-}
+export class AuthModule {}

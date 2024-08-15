@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
 import { success } from '../util/function';
@@ -7,7 +7,6 @@ import { SkipAuthorization } from './guards/jwt.guard';
 import { InjectQueue } from '@nestjs/bullmq';
 import { BullTypes, EmailTypes } from '../config/types';
 import { Queue } from 'bullmq';
-import { EmailData } from '../util/email.processor';
 
 @Controller('auth')
 @ApiTags('Authentication')
@@ -20,15 +19,13 @@ export class AuthController {
 
   @Post('register')
   async registerUser(@Body() createAuthDto: RegisterUserDto) {
-    const user = await this.authService.create(createAuthDto);
-    if (user) {
-      const data: EmailData = {
-        to: user.email,
-        subject: 'Welcome to Eventify',
-        html: `<h1>Welcome ${user.first_name}</h1>`,
-      };
-      await this.emailQueue.add(EmailTypes.WELCOME, data);
-    }
+    const { first_name, last_name, email } = await this.authService.create(createAuthDto);
+
+    await this.emailQueue.add(EmailTypes.EMAIL_VERIFICATION, {
+      first_name,
+      last_name,
+      email,
+    });
     return success(
       null,
       'user registered successfully. check your email for verification',
@@ -41,5 +38,13 @@ export class AuthController {
   async loginUser(@Body() loginUserDto: LoginUserDto) {
     const user = await this.authService.login(loginUserDto);
     return success(user, 'user logged in successfully');
+  }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    const { first_name, email } = await this.authService.verifyEmail(token);
+
+    await this.emailQueue.add(EmailTypes.WELCOME, { first_name, email });
+    return success(null, 'email verified successfully');
   }
 }

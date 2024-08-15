@@ -10,7 +10,7 @@ import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { KNEX_CONNECTION } from '../database/knexfile';
-import { UserService } from '../user/user.service';
+import { UserNotFoundException, UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -67,5 +67,26 @@ export class AuthService {
         },
       ),
     };
+  }
+
+  async verifyEmail(token: string) {
+    const decodedToken = Buffer.from(token, 'base64').toString('ascii');
+    const { email, type } = this.jwtService.verify(decodedToken) as {
+      email: string;
+      type: string;
+    };
+    if (type !== 'verification') {
+      throw new BadRequestException('invalid token');
+    }
+    const user = await this.userService.findOneByEmail(email);
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+    const [updatedUser] = await this.usersQuery
+      .where('email', email)
+      .update('verified_at', new Date())
+      .returning(['email', 'first_name']);
+
+    return updatedUser;
   }
 }
