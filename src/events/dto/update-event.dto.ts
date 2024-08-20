@@ -8,3 +8,11 @@ export class IdParam {
   @IsUUID()
   id: string;
 }
+
+export class TicketIdParam {
+  @IsUUID()
+  id: string;
+
+  @IsUUID()
+  ticket_id: string;
+}

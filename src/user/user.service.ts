@@ -7,15 +7,33 @@ import { HttpException } from '@nestjs/common/exceptions';
 import { UpdatePasswordDto } from './dto/update-password.dto';
 import { FilterDto } from './dto/filter.dto';
 import bcrypt from 'bcryptjs';
+import { RegisterUserDto } from '../auth/dto/register-user.dto';
 
 @Injectable()
 export class UserService {
-  private readonly userQuery;
+  private readonly usersQuery;
   private readonly activeUserQuery;
 
   constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
-    this.userQuery = knex<User>('users');
+    this.usersQuery = knex<User>('users');
     this.activeUserQuery = knex<User>('active_users');
+  }
+
+  async create(createAuthDto: RegisterUserDto): Promise<User> {
+    const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const [newUser] = await this.usersQuery
+      .insert({
+        first_name: firstName,
+        last_name: lastName,
+        dob: dateOfBirth,
+        email: email,
+        password: passwordHash,
+      })
+      .returning('*');
+    return newUser;
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
@@ -30,7 +48,7 @@ export class UserService {
   }
 
   async findOne(userId: string) {
-    const [user] = await this.userQuery.where('id', userId).returning('*');
+    const [user] = await this.usersQuery.where('id', userId).returning('*');
     if (!user) {
       throw new UserNotFoundException();
     }
@@ -42,7 +60,7 @@ export class UserService {
     if (!user) {
       throw new UserNotFoundException();
     }
-    const [updatedUser] = await this.userQuery
+    const [updatedUser] = await this.usersQuery
       .where('id', userId)
       .update({
         first_name: updateUserDto.firstName || user.first_name,
@@ -77,7 +95,7 @@ export class UserService {
       salt,
     );
 
-    await this.userQuery
+    await this.usersQuery
       .where('id', user.id)
       .update({ password: passwordHash });
 
@@ -89,7 +107,7 @@ export class UserService {
   }
 
   async becomeAnOrganizer(userId: string) {
-    const updatedUser = await this.userQuery
+    const updatedUser = await this.usersQuery
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN.toString()])
       // .orWhereNotIn('roles', [UserRole.ORGANIZER.toString()])
@@ -103,7 +121,7 @@ export class UserService {
   }
 
   async becomeAnAdministrator(userId: string) {
-    const updatedUser = await this.userQuery
+    const updatedUser = await this.usersQuery
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN, UserRole.ORGANIZER])
       .update({

@@ -11,12 +11,13 @@ import {
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
-import { IdParam, UpdateEventDto } from './dto/update-event.dto';
+import { IdParam, TicketIdParam, UpdateEventDto } from './dto/update-event.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { User, UserRole } from '../user/entities/user.entity';
 import { success } from '../util/function';
 import { Roles } from '../auth/guards/roles.guard';
+import { CreateTicketDto, UpdateTicketDto } from './dto/create-ticket.dto';
 
 @Controller('events')
 @ApiTags('Events')
@@ -79,5 +80,57 @@ export class EventsController {
     const admin = req.user as User;
     await this.eventsService.deleteEvent(idParam.id, admin.id);
     return success(null, 'event deleted');
+  }
+
+  @Roles(UserRole.ORGANIZER)
+  @Post(':id/tickets')
+  async createTicket(
+    @Req() req: Request,
+    @Param() idParam: IdParam,
+    @Body() createTicketDto: CreateTicketDto,
+  ) {
+    const organizer = req.user as User;
+    const ticket = await this.eventsService.createTicket(
+      idParam.id,
+      organizer.id,
+      createTicketDto,
+    );
+    return success(ticket, 'ticket created');
+  }
+
+  @Get(':id/tickets')
+  async getTickets(@Param() idParam: IdParam) {
+    const tickets = await this.eventsService.getTickets(idParam.id);
+    return success(tickets, 'tickets fetched');
+  }
+
+  @Get(':id/tickets/:ticket_id')
+  async getTicket(@Param() idParam: TicketIdParam) {
+    const ticket = await this.eventsService.getTicket(idParam);
+    return success(ticket, 'ticket fetched');
+  }
+
+  @Roles(UserRole.ORGANIZER)
+  @Patch(':id/tickets/:ticket_id')
+  async updateTicket(
+    @Req() req: Request,
+    @Param() idParam: TicketIdParam,
+    @Body() updateTicketDto: UpdateTicketDto,
+  ) {
+    const organizer = req.user as User;
+    const ticket = await this.eventsService.updateTicket(
+      organizer.id,
+      idParam,
+      updateTicketDto,
+    );
+    return success(ticket, 'ticket updated');
+  }
+
+  @Roles(UserRole.ORGANIZER)
+  @Delete(':id/tickets/:ticket_id')
+  async deleteTicket(@Req() req: Request, @Param() idParam: TicketIdParam) {
+    const organizer = req.user as User;
+    await this.eventsService.deleteTicket(organizer.id, idParam);
+    return success(null, 'ticket deleted');
   }
 }

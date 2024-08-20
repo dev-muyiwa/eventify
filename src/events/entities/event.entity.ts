@@ -8,3 +8,13 @@ export class Event {
   readonly creator_id: string;
   readonly published_at?: Date | null;
 }
+
+export class Ticket {
+  readonly id?: string;
+  readonly name: string;
+  readonly description: string;
+  readonly price: number;
+  readonly quantity: number;
+  readonly available_quantity: number;
+  readonly event_id: string;
+}

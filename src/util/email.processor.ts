@@ -44,7 +44,6 @@ export class EmailProcessor extends WorkerHost {
       switch (name) {
         case EmailTypes.WELCOME: {
           const { first_name, email } = data;
-          // active_events_url, first_name
           const htmlPath = join('./src/util/emails/welcome-email.html');
           const html = await readFileAsync(htmlPath, 'utf8');
           const template = Handlebars.compile(html);
@@ -63,8 +62,8 @@ export class EmailProcessor extends WorkerHost {
         case EmailTypes.EMAIL_VERIFICATION: {
           const { first_name, last_name, email } = data;
           const token = this.jwtService.sign(
-            { email: email, type: 'verification' },
-            { expiresIn: '20m' },
+            { email: email, type: EmailTypes.EMAIL_VERIFICATION },
+            { expiresIn: '1d' },
           );
           const encodedToken = Buffer.from(token).toString('base64');
           const htmlPath = join('./src/util/emails/confirmation-email.html');
@@ -85,6 +84,9 @@ export class EmailProcessor extends WorkerHost {
         }
         case EmailTypes.RESET_PASSWORD: {
           console.log('Sending reset password email');
+          break;
+        }
+        case EmailTypes.ACCOUNT_DEACTIVATION: {
           break;
         }
         default:

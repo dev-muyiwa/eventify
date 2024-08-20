@@ -11,41 +11,31 @@ import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { KNEX_CONNECTION } from '../database/knexfile';
 import { UserNotFoundException, UserService } from '../user/user.service';
+import { EmailTypes } from '../config/types';
 
 @Injectable()
 export class AuthService {
-  private usersQuery: Knex.QueryBuilder<User>;
+  private readonly usersQuery: Knex.QueryBuilder<User>;
 
   constructor(
-    private jwtService: JwtService,
-    private userService: UserService,
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService,
     @Inject(KNEX_CONNECTION) private readonly knex: Knex,
   ) {
     this.usersQuery = this.knex<User>('users');
   }
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {
-    const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
-    const existingUser = await this.userService.findOneByEmail(email);
+    const existingUser = await this.userService.findOneByEmail(
+      createAuthDto.email,
+    );
     if (existingUser) {
       throw new BadRequestException(
         'an account with this email already exists',
       );
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    const [newUser] = await this.usersQuery
-      .insert({
-        first_name: firstName,
-        last_name: lastName,
-        dob: dateOfBirth,
-        email: email,
-        password: passwordHash,
-      })
-      .returning('*');
-    return newUser;
+    return this.userService.create(createAuthDto);
   }
 
   async login(loginDto: LoginUserDto) {
@@ -60,6 +50,10 @@ export class AuthService {
     }
 
     return {
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      verified_at: user.verified_at,
       access_token: this.jwtService.sign(
         { email: email },
         {
@@ -75,7 +69,7 @@ export class AuthService {
       email: string;
       type: string;
     };
-    if (type !== 'verification') {
+    if (type !== EmailTypes.EMAIL_VERIFICATION) {
       throw new BadRequestException('invalid token');
     }
     const user = await this.userService.findOneByEmail(email);

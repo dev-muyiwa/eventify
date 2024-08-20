@@ -5,20 +5,23 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
-import { UpdateEventDto } from './dto/update-event.dto';
+import { TicketIdParam, UpdateEventDto } from './dto/update-event.dto';
 import { KNEX_CONNECTION } from '../database/knexfile';
 import { Knex } from 'knex';
-import { Event } from './entities/event.entity';
+import { Event, Ticket } from './entities/event.entity';
 import { paginate } from '../util/function';
+import { CreateTicketDto, UpdateTicketDto } from './dto/create-ticket.dto';
 
 @Injectable()
 export class EventsService {
   private readonly eventsQuery: Knex.QueryBuilder<Event>;
   private readonly activeEventsQuery: Knex.QueryBuilder<Event>;
+  private readonly ticketsQuery: Knex.QueryBuilder<Ticket>;
 
   constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
     this.eventsQuery = this.knex<Event>('events');
     this.activeEventsQuery = this.knex<Event>('active_events');
+    this.ticketsQuery = this.knex<Ticket>('tickets');
   }
 
   async createEvent(creatorId: string, createEventDto: CreateEventDto) {
@@ -101,7 +104,12 @@ export class EventsService {
     }
 
     if (event.published_at) {
-      throw new BadRequestException('event already published');
+      throw new BadRequestException('event is already published');
+    }
+
+    const tickets = await this.ticketsQuery.where('event_id', event.id).first();
+    if (!tickets) {
+      throw new BadRequestException('event has no tickets');
     }
 
     const [publishedEvent] = await this.eventsQuery
@@ -114,10 +122,124 @@ export class EventsService {
 
   async deleteEvent(eventId: string, creatorId: string) {
     const event = await this.eventsQuery
-      .where({ id: eventId, creator_id: creatorId })
+      .where({ id: eventId, creator_id: creatorId, published_at: null })
       .delete();
     if (event === 0) {
       throw new EventNotFoundException();
+    }
+  }
+
+  async createTicket(
+    eventId: string,
+    organizerId: string,
+    ticketDto: CreateTicketDto,
+  ) {
+    const [event] = await this.eventsQuery.where({
+      id: eventId,
+      creator_id: organizerId,
+    });
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+
+    if (event.published_at) {
+      throw new BadRequestException('event is already published');
+    }
+
+    const [ticket] = await this.ticketsQuery
+      .insert({
+        name: ticketDto.name,
+        description: ticketDto.description,
+        price: ticketDto.price,
+        quantity: ticketDto.quantity,
+        available_quantity: ticketDto.quantity,
+        event_id: event.id,
+      } as Ticket)
+      .returning('*');
+
+    return ticket;
+  }
+
+  async getTickets(eventId: string) {
+    const event = await this.eventsQuery.where('id', eventId).first();
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+
+    return await paginate<Ticket>(
+      this.ticketsQuery.where('event_id', event.id),
+      1,
+    );
+  }
+
+  async getTicket(idParam: TicketIdParam) {
+    const [event, ticket] = await Promise.all([
+      this.eventsQuery.where('id', idParam.id).first(),
+      this.ticketsQuery.where('id', idParam.ticket_id).first(),
+    ]);
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+    if (!ticket) {
+      throw new TicketNotFoundException();
+    }
+    return ticket;
+  }
+
+  async updateTicket(
+    organizerId: string,
+    idParam: TicketIdParam,
+    ticketDto: UpdateTicketDto,
+  ) {
+    const [event, ticket] = await Promise.all([
+      this.eventsQuery
+        .where({ id: idParam.id, creator_id: organizerId })
+        .first(),
+      this.ticketsQuery
+        .where({ id: idParam.ticket_id, event_id: idParam.id })
+        .first(),
+    ]);
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+    if (!ticket) {
+      throw new TicketNotFoundException();
+    }
+
+    const [updatedTicket] = await this.ticketsQuery
+      .where('id', ticket.id)
+      .update({
+        name: ticketDto.name || ticket.name,
+        description: ticketDto.description || ticket.description,
+        price: ticketDto.price || ticket.price,
+        quantity: ticketDto.quantity || ticket.available_quantity,
+        available_quantity: ticketDto.quantity || ticket.available_quantity,
+      } as Ticket)
+      .returning('*');
+
+    return updatedTicket;
+  }
+
+  async deleteTicket(organizerId: string, idParam: TicketIdParam) {
+    const [event, ticket] = await Promise.all([
+      this.eventsQuery
+        .where({ id: idParam.id, creator_id: organizerId })
+        .first(),
+      this.ticketsQuery
+        .where({ id: idParam.ticket_id, event_id: idParam.id })
+        .first(),
+    ]);
+    if (!event) {
+      throw new EventNotFoundException();
+    }
+    if (!ticket) {
+      throw new TicketNotFoundException();
+    }
+    const deletedTicket = await this.ticketsQuery
+      .where({ id: idParam.ticket_id })
+      .delete();
+    if (deletedTicket === 0) {
+      throw new TicketNotFoundException();
     }
   }
 }
@@ -125,5 +247,11 @@ export class EventsService {
 export class EventNotFoundException extends NotFoundException {
   constructor() {
     super('event not found');
+  }
+}
+
+export class TicketNotFoundException extends NotFoundException {
+  constructor() {
+    super('ticket not found');
   }
 }

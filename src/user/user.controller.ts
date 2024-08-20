@@ -89,6 +89,8 @@ export class UserController {
     return success(null, 'user is now an organizer');
   }
 
+  // convert this endpoint to admin making other users an admin
+  // only for admins
   @Patch('me/administrator')
   async becomeAnAdministrator(@Req() req: Request) {
     const user = req.user as User;

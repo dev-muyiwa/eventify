@@ -5,9 +5,10 @@ export const BullTypes = {
 };
 
 export const EmailTypes = {
-  WELCOME: 'welcome-email',
-  EMAIL_VERIFICATION: 'email-verification-email',
-  RESET_PASSWORD: 'reset-password-email',
+  WELCOME: 'welcome',
+  EMAIL_VERIFICATION: 'email-verification',
+  RESET_PASSWORD: 'password-reset',
+  ACCOUNT_DEACTIVATION: 'account-deactivation',
 };
 
 export const NODEMAILER_TRANSPORTER = 'Nodemailer-Transporter';

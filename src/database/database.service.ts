@@ -6,6 +6,8 @@ import { Logger } from 'winston';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import * as process from 'node:process';
 import { getKnexConfig } from './knexfile';
+import bcrypt from 'bcryptjs';
+import { UserRole } from '../user/entities/user.entity';
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
@@ -69,6 +71,24 @@ export class DatabaseService implements OnModuleInit {
         this.logger.info(`Ran ${migrations.length} migrations`, {
           context: 'DatabaseService',
         });
+
+        // seed the db with admin user
+        await this.knexConnection('users')
+          .insert({
+            first_name: 'Admin',
+            last_name: 'User',
+            dob: new Date('2000-03-01'),
+            email: 'admin@eventify.com',
+            verified_at: new Date(),
+            password: bcrypt.hashSync(
+              'Admin-Password123?',
+              bcrypt.genSaltSync(10),
+            ),
+            roles: [UserRole.USER, UserRole.ADMIN],
+          })
+          .onConflict('email')
+          .ignore()
+          .returning('*');
       } catch (error) {
         this.logger.error(`Error running migrations:${error}`, {
           context: 'DatabaseService',
