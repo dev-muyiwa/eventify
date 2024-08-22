@@ -14,7 +14,15 @@ export class Ticket {
   readonly name: string;
   readonly description: string;
   readonly price: number;
-  readonly quantity: number;
-  readonly available_quantity: number;
+  readonly total_quantity: number;
   readonly event_id: string;
+}
+
+export class TicketReservation {
+  readonly id?: string;
+  readonly first_name: string;
+  readonly last_name: string;
+  readonly email: string;
+  readonly ticket_id: string;
+  readonly user_id: string;
 }

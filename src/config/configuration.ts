@@ -28,6 +28,7 @@ export default (): EnvConfig => {
       from: process.env.MAIL_FROM,
       secure: process.env.MAIL_TLS === 'yes' ? 'true' : 'false',
     },
+    paystack_secret_key: process.env.PAYSTACK_SECRET_KEY,
   };
 
   const configInstance = plainToInstance(EnvConfig, config);

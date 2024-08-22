@@ -24,20 +24,33 @@ export class UserService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    const [newUser] = await this.usersQuery
-      .insert({
-        first_name: firstName,
-        last_name: lastName,
-        dob: dateOfBirth,
-        email: email,
-        password: passwordHash,
-      })
-      .returning('*');
-    return newUser;
+    return await this.knex.transaction(async (trx) => {
+      const [newUser] = await this.usersQuery
+        .clone()
+        .insert({
+          first_name: firstName,
+          last_name: lastName,
+          dob: dateOfBirth,
+          email: email,
+          password: passwordHash,
+        })
+        .transacting(trx)
+        .returning('*');
+
+      await this.knex('carts')
+        .clone()
+        .insert({
+          user_id: newUser.id,
+        })
+        .transacting(trx);
+
+      return newUser;
+    });
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
     const [user] = await this.activeUserQuery
+      .clone()
       .where('email', email)
       .returning('*');
     return user;
@@ -48,7 +61,7 @@ export class UserService {
   }
 
   async findOne(userId: string) {
-    const [user] = await this.usersQuery.where('id', userId).returning('*');
+    const [user] = await this.usersQuery.clone().where('id', userId).returning('*');
     if (!user) {
       throw new UserNotFoundException();
     }
@@ -56,11 +69,12 @@ export class UserService {
   }
 
   async updateUserProfile(userId: string, updateUserDto: UpdateUserDto) {
-    const [user] = await this.activeUserQuery.where('id', userId);
+    const [user] = await this.activeUserQuery.clone().where('id', userId);
     if (!user) {
       throw new UserNotFoundException();
     }
     const [updatedUser] = await this.usersQuery
+      .clone()
       .where('id', userId)
       .update({
         first_name: updateUserDto.firstName || user.first_name,
@@ -78,7 +92,7 @@ export class UserService {
     userId: string,
     updatePasswordDto: UpdatePasswordDto,
   ) {
-    const [user] = await this.activeUserQuery.where('id', userId);
+    const [user] = await this.activeUserQuery.clone().where('id', userId);
     if (!user) {
       throw new UserNotFoundException();
     }
@@ -96,6 +110,7 @@ export class UserService {
     );
 
     await this.usersQuery
+      .clone()
       .where('id', user.id)
       .update({ password: passwordHash });
 
@@ -108,6 +123,7 @@ export class UserService {
 
   async becomeAnOrganizer(userId: string) {
     const updatedUser = await this.usersQuery
+      .clone()
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN.toString()])
       // .orWhereNotIn('roles', [UserRole.ORGANIZER.toString()])
@@ -122,6 +138,7 @@ export class UserService {
 
   async becomeAnAdministrator(userId: string) {
     const updatedUser = await this.usersQuery
+      .clone()
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN, UserRole.ORGANIZER])
       .update({

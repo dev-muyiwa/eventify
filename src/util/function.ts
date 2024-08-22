@@ -61,7 +61,7 @@ export async function paginate<T extends NonNullable<unknown>>(
   ]);
 
   const totalRecords =
-    total && total.count ? parseInt(total.count as string, 10) : 0;
+    total && total.length ? parseInt(total[0].count as string, 10) : 0;
   const totalPages = Math.ceil(totalRecords / pageSize);
 
   return {

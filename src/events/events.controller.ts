@@ -12,7 +12,7 @@ import {
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { IdParam, TicketIdParam, UpdateEventDto } from './dto/update-event.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { User, UserRole } from '../user/entities/user.entity';
 import { success } from '../util/function';
@@ -21,6 +21,7 @@ import { CreateTicketDto, UpdateTicketDto } from './dto/create-ticket.dto';
 
 @Controller('events')
 @ApiTags('Events')
+@ApiBearerAuth()
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
@@ -42,7 +43,7 @@ export class EventsController {
   }
 
   @Get()
-  @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
+  // @Roles(UserRole.ORGANIZER, UserRole.ADMIN)
   findAllActiveEvents() {
     return this.eventsService.findAllActiveEvents();
   }
@@ -132,5 +133,12 @@ export class EventsController {
     const organizer = req.user as User;
     await this.eventsService.deleteTicket(organizer.id, idParam);
     return success(null, 'ticket deleted');
+  }
+
+  @Post(':id/tickets/:ticket_id/cart')
+  async addTicketToCart(@Req() req: Request, @Param() idParam: TicketIdParam) {
+    const user = req.user as User;
+    // await this.eventsService.purchaseTicket(user.id, idParam);
+    return success(null, 'ticket purchased');
   }
 }

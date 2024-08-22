@@ -151,8 +151,7 @@ export class EventsService {
         name: ticketDto.name,
         description: ticketDto.description,
         price: ticketDto.price,
-        quantity: ticketDto.quantity,
-        available_quantity: ticketDto.quantity,
+        total_quantity: ticketDto.total_quantity,
         event_id: event.id,
       } as Ticket)
       .returning('*');
@@ -161,7 +160,7 @@ export class EventsService {
   }
 
   async getTickets(eventId: string) {
-    const event = await this.eventsQuery.where('id', eventId).first();
+    const [event] = await this.eventsQuery.where('id', eventId);
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -212,8 +211,7 @@ export class EventsService {
         name: ticketDto.name || ticket.name,
         description: ticketDto.description || ticket.description,
         price: ticketDto.price || ticket.price,
-        quantity: ticketDto.quantity || ticket.available_quantity,
-        available_quantity: ticketDto.quantity || ticket.available_quantity,
+        total_quantity: ticketDto.total_quantity || ticket.total_quantity,
       } as Ticket)
       .returning('*');
 

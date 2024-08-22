@@ -53,7 +53,7 @@ execute function update_updated_at_column();
 -- create a tickets table
 create table if not exists tickets
 (
-    id             int8 primary key generated always as identity,
+    id             uuid primary key        default gen_random_uuid(),
     name           varchar(50)    not null,
     description    text           not null,
     total_quantity int4           not null check (total_quantity > 0),
@@ -78,14 +78,14 @@ execute function update_updated_at_column();
 -- create a tickets_reservations table
 create table if not exists tickets_reservations
 (
-    id         uuid primary key     default gen_random_uuid(),
-    quantity   int2        not null check (quantity > 0),
-    available_quantity int2 not null check (quantity >= available_quantity and available_quantity >= 0),
+    id                 uuid primary key     default gen_random_uuid(),
+    quantity           int2        not null check (quantity > 0),
+    available_quantity int2        not null check (quantity >= available_quantity and available_quantity >= 0),
 --     relationships
-    ticket_id  int8        not null references tickets (id) on delete no action,
-    user_id    uuid        not null references users (id) on delete cascade,
+    ticket_id          uuid        not null references tickets (id) on delete no action,
+    user_id            uuid        not null references users (id) on delete cascade,
 --     timestamps
-    created_at timestamptz not null default now()
+    created_at         timestamptz not null default now()
 );
 
 -- add indexes to the tickets_reservations table

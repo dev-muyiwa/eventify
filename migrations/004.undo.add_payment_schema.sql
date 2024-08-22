@@ -1,7 +1,7 @@
 begin;
 -- drop the tables
-drop table if exists orders;
-drop table if exists order_items;
+drop table if exists carts;
+drop table if exists cart_items;
 drop table if exists payments;
 -- drop the type
 drop type if exists payment_status;
@@ -9,6 +9,6 @@ drop type if exists payment_status;
 alter table if exists tickets_reservations
     add column if not exists available_quantity int4 not null default 0 check (available_quantity >= 0),
     add column if not exists quantity           int2 not null default 1 check (quantity > 0),
-    drop column if exists order_item_id;
+    drop column if exists cart_item_id;
 
 commit;

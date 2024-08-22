@@ -91,4 +91,7 @@ export class EnvConfig {
   @ValidateNested()
   @Type(() => MailConfig)
   email: MailConfig;
+
+  @IsString({ message: 'paystack secret key is required' })
+  paystack_secret_key: string;
 }

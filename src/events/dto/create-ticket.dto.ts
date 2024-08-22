@@ -12,7 +12,7 @@ export class CreateTicketDto {
   readonly price: number;
 
   @IsNumber({}, { message: 'Ticket quantity must be a number' })
-  readonly quantity: number;
+  readonly total_quantity: number;
 }
 
 export class UpdateTicketDto extends PartialType(CreateTicketDto) {}

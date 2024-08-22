@@ -18,6 +18,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { BullTypes, NODEMAILER_TRANSPORTER } from './config/types';
 import nodemailer from 'nodemailer';
 import { EmailProcessor } from './util/email.processor';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { EmailProcessor } from './util/email.processor';
     UserModule,
     AuthModule,
     EventsModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [
