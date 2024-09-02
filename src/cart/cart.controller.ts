@@ -20,6 +20,7 @@ import { Logger } from 'winston';
 import { WebHookDto } from './dto/webhook.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SkipAuthorization } from '../auth/guards/jwt.guard';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @ApiTags('Cart')
 @ApiBearerAuth()
@@ -32,7 +33,7 @@ export class CartController {
   ) {}
 
   @Post()
-  async createCartItem(
+  async addTicketToCart(
     @Req() req: Request,
     @Body() createCartItemDto: CreateCartItemDto,
   ) {
@@ -56,6 +57,7 @@ export class CartController {
   @Post('checkout')
   async checkoutCart(@Req() req: Request) {
     const user = req.user as User;
+    // create order and order items
     const url = await this.cartService.checkoutCart(user);
 
     return success({ redirect_url: url }, 'checkout initiated');
@@ -76,17 +78,26 @@ export class CartController {
       .digest('hex');
     // acknowledge the request
     if (hash == req.headers['x-paystack-signature']) {
-      if (data.event == 'charge.success') {
+      // verify the transaction
+      if (data.event == 'charge.success' && data.data.status === 'success') {
         this.logger.info(`Payment request success: ${data}`, data);
         // only update the payment status if the payment was successful and the db record is not already updated
         await this.cartService.verifyPayment(data.data);
         res.status(HttpStatus.OK).send();
       } else {
         this.logger.error('Invalid webhook request: Invalid event', data);
+        res.status(HttpStatus.BAD_REQUEST).send();
       }
     } else {
       this.logger.error('Invalid webhook request: Signature mismatch', data);
       res.status(HttpStatus.BAD_REQUEST).send();
     }
+  }
+
+  //   cron job to update the status of orders that have not been paid for
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async updatePendingOrders() {
+    this.logger.info('Updating pending orders');
+    await this.cartService.updatePendingOrders();
   }
 }

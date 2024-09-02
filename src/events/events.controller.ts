@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -135,10 +136,14 @@ export class EventsController {
     return success(null, 'ticket deleted');
   }
 
-  @Post(':id/tickets/:ticket_id/cart')
-  async addTicketToCart(@Req() req: Request, @Param() idParam: TicketIdParam) {
-    const user = req.user as User;
-    // await this.eventsService.purchaseTicket(user.id, idParam);
-    return success(null, 'ticket purchased');
-  }
+  // @Post(':id/tickets/:ticket_id/cart')
+  // async addTicketToCart(@Req() req: Request, @Param() idParam: TicketIdParam) {
+  //   const user = req.user as User;
+  //   const hasOtherRoles = user.roles.length > 1;
+  //   if (hasOtherRoles) {
+  //     throw new ForbiddenException();
+  //   }
+  //   // await this.eventsService.purchaseTicket(user.id, idParam);
+  //   return success(null, 'ticket purchased');
+  // }
 }

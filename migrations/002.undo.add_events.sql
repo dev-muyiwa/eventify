@@ -12,9 +12,7 @@ drop view if exists active_tickets;
 drop index if exists events_name_index;
 drop index if exists events_deleted_at_index;
 drop index if exists tickets_event_id_index;
-drop index if exists tickets_reservations_id_index;
 -- drop the tables
-drop table if exists tickets_reservations;
 drop table if exists tickets;
 drop table if exists events;
 commit;

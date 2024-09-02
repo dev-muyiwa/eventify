@@ -1,29 +1,21 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { LoginUserDto, RegisterUserDto } from './dto/register-user.dto';
-import { Knex } from 'knex';
 import { User } from '../user/entities/user.entity';
 import bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { KNEX_CONNECTION } from '../database/knexfile';
 import { UserNotFoundException, UserService } from '../user/user.service';
 import { EmailTypes } from '../config/types';
 
 @Injectable()
 export class AuthService {
-  private readonly usersQuery: Knex.QueryBuilder<User>;
-
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
-    @Inject(KNEX_CONNECTION) private readonly knex: Knex,
-  ) {
-    this.usersQuery = this.knex<User>('users');
-  }
+  ) {}
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {
     const existingUser = await this.userService.findOneByEmail(
@@ -76,11 +68,8 @@ export class AuthService {
     if (!user) {
       throw new UserNotFoundException();
     }
-    const [updatedUser] = await this.usersQuery
-      .where('email', email)
-      .update('verified_at', new Date())
-      .returning(['email', 'first_name']);
+    const updatedUser = await this.userService.verifyUser(user.email);
 
-    return updatedUser;
+    return { ...updatedUser, has_previously_verified: !!user.verified_at };
   }
 }

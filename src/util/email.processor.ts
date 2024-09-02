@@ -89,6 +89,10 @@ export class EmailProcessor extends WorkerHost {
         case EmailTypes.ACCOUNT_DEACTIVATION: {
           break;
         }
+        case EmailTypes.ORDER_CONFIRMATION: {
+          this.logger.info('Sending order confirmation email...');
+          break;
+        }
         default:
           console.log('Unknown email job');
           break;

@@ -19,8 +19,24 @@ export class DatabaseService implements OnModuleInit {
     @Optional() overrideConfig?: Knex.Config,
   ) {
     const dbConfig = overrideConfig || getKnexConfig(configService);
-    this.knexConnection = knex(dbConfig);
+    this.knexConnection = knex({
+      ...dbConfig,
+      debug: true,
+      log: {
+        debug(message) {
+          logger.verbose(message, { context: 'DatabaseService' });
+        },
+      },
+    });
   }
+
+  // private createQueryLogger() {
+  //   return (message: string) => {
+  //     if (message.startsWith('Executed')) {
+  //       this.logger.debug(message, { context: 'DatabaseService' });
+  //     }
+  //   };
+  // }
 
   async onModuleInit() {
     try {
@@ -107,7 +123,15 @@ export class DatabaseService implements OnModuleInit {
 
   getKnexConnection(overrideConfig?: Knex.Config): Knex {
     if (overrideConfig) {
-      return knex(overrideConfig);
+      return knex({
+        ...overrideConfig,
+        debug: true,
+        log: {
+          debug(message) {
+            this.logger.debug(message, { context: 'DatabaseService' });
+          },
+        },
+      });
     }
     return this.knexConnection;
   }

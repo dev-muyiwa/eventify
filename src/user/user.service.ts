@@ -8,16 +8,12 @@ import { UpdatePasswordDto } from './dto/update-password.dto';
 import { FilterDto } from './dto/filter.dto';
 import bcrypt from 'bcryptjs';
 import { RegisterUserDto } from '../auth/dto/register-user.dto';
+import { TableName } from '../database/tables';
+import { Cart } from '../cart/entities/cart.entity';
 
 @Injectable()
 export class UserService {
-  private readonly usersQuery;
-  private readonly activeUserQuery;
-
-  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
-    this.usersQuery = knex<User>('users');
-    this.activeUserQuery = knex<User>('active_users');
-  }
+  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {}
 
   async create(createAuthDto: RegisterUserDto): Promise<User> {
     const { firstName, lastName, dateOfBirth, password, email } = createAuthDto;
@@ -25,8 +21,7 @@ export class UserService {
     const passwordHash = await bcrypt.hash(password, salt);
 
     return await this.knex.transaction(async (trx) => {
-      const [newUser] = await this.usersQuery
-        .clone()
+      const [newUser] = await trx<User>(TableName.USERS)
         .insert({
           first_name: firstName,
           last_name: lastName,
@@ -34,23 +29,18 @@ export class UserService {
           email: email,
           password: passwordHash,
         })
-        .transacting(trx)
         .returning('*');
 
-      await this.knex('carts')
-        .clone()
-        .insert({
-          user_id: newUser.id,
-        })
-        .transacting(trx);
+      await trx<Cart>(TableName.CARTS).clone().insert({
+        user_id: newUser.id,
+      });
 
       return newUser;
     });
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
-    const [user] = await this.activeUserQuery
-      .clone()
+    const [user] = await this.knex<User>(TableName.ACTIVE_USERS)
       .where('email', email)
       .returning('*');
     return user;
@@ -61,7 +51,9 @@ export class UserService {
   }
 
   async findOne(userId: string) {
-    const [user] = await this.usersQuery.clone().where('id', userId).returning('*');
+    const [user] = await this.knex<User>(TableName.USERS)
+      .where('id', userId)
+      .returning('*');
     if (!user) {
       throw new UserNotFoundException();
     }
@@ -69,12 +61,14 @@ export class UserService {
   }
 
   async updateUserProfile(userId: string, updateUserDto: UpdateUserDto) {
-    const [user] = await this.activeUserQuery.clone().where('id', userId);
+    const [user] = await this.knex<User>(TableName.ACTIVE_USERS).where(
+      'id',
+      userId,
+    );
     if (!user) {
       throw new UserNotFoundException();
     }
-    const [updatedUser] = await this.usersQuery
-      .clone()
+    const [updatedUser] = await this.knex<User>(TableName.USERS)
       .where('id', userId)
       .update({
         first_name: updateUserDto.firstName || user.first_name,
@@ -88,11 +82,25 @@ export class UserService {
     return data;
   }
 
+  async verifyUser(email: string) {
+    const [user] = await this.knex<User>(TableName.USERS)
+      .where('email', email)
+      .update('verified_at', new Date())
+      .returning(['email', 'first_name']);
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+    return user;
+  }
+
   async updateUserPassword(
     userId: string,
     updatePasswordDto: UpdatePasswordDto,
   ) {
-    const [user] = await this.activeUserQuery.clone().where('id', userId);
+    const [user] = await this.knex<User>(TableName.ACTIVE_USERS).where(
+      'id',
+      userId,
+    );
     if (!user) {
       throw new UserNotFoundException();
     }
@@ -109,8 +117,7 @@ export class UserService {
       salt,
     );
 
-    await this.usersQuery
-      .clone()
+    await this.knex<User>(TableName.USERS)
       .where('id', user.id)
       .update({ password: passwordHash });
 
@@ -122,8 +129,7 @@ export class UserService {
   }
 
   async becomeAnOrganizer(userId: string) {
-    const updatedUser = await this.usersQuery
-      .clone()
+    const updatedUser = await this.knex<User>(TableName.USERS)
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN.toString()])
       // .orWhereNotIn('roles', [UserRole.ORGANIZER.toString()])
@@ -137,8 +143,7 @@ export class UserService {
   }
 
   async becomeAnAdministrator(userId: string) {
-    const updatedUser = await this.usersQuery
-      .clone()
+    const updatedUser = await this.knex<User>(TableName.USERS)
       .where('id', userId)
       // .whereNotIn('roles', [UserRole.ADMIN, UserRole.ORGANIZER])
       .update({

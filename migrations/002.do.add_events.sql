@@ -53,16 +53,16 @@ execute function update_updated_at_column();
 -- create a tickets table
 create table if not exists tickets
 (
-    id             uuid primary key        default gen_random_uuid(),
-    name           varchar(50)    not null,
-    description    text           not null,
-    total_quantity int4           not null check (total_quantity > 0),
-    price          decimal(10, 4) not null check (price > 0),
+    id                 uuid primary key        default gen_random_uuid(),
+    name               varchar(50)    not null,
+    description        text           not null,
+    available_quantity int4           not null check (available_quantity >= 0),
+    price              decimal(10, 4) not null check (price > 0),
 -- relationships
-    event_id       uuid           not null references events (id) on delete cascade,
+    event_id           uuid           not null references events (id) on delete cascade,
 --     timestamps
-    created_at     timestamptz    not null default now(),
-    updated_at     timestamptz    not null default now()
+    created_at         timestamptz    not null default now(),
+    updated_at         timestamptz    not null default now()
 );
 
 -- add indexes to the tickets table
@@ -74,22 +74,6 @@ create trigger update_tickets_updated_at
     on tickets
     for each row
 execute function update_updated_at_column();
-
--- create a tickets_reservations table
-create table if not exists tickets_reservations
-(
-    id                 uuid primary key     default gen_random_uuid(),
-    quantity           int2        not null check (quantity > 0),
-    available_quantity int2        not null check (quantity >= available_quantity and available_quantity >= 0),
---     relationships
-    ticket_id          uuid        not null references tickets (id) on delete no action,
-    user_id            uuid        not null references users (id) on delete cascade,
---     timestamps
-    created_at         timestamptz not null default now()
-);
-
--- add indexes to the tickets_reservations table
-create index if not exists tickets_reservations_id_index on tickets_reservations (ticket_id, user_id);
 
 -- create a trigger to update the updated_at column in the users table
 create trigger update_users_updated_at

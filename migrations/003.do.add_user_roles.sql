@@ -7,7 +7,4 @@ alter table users add column roles user_role[] not null default array ['user'::u
 alter table users add column verified_at timestamptz default null;
 -- update the active_users view to include the new roles column
 create or replace view active_users as select * from users where deleted_at is null;
-
-create type ticket_status as enum ('pending', 'confirmed', 'cancelled');
-alter table tickets_reservations add column status ticket_status not null default 'pending'::ticket_status;
 commit;

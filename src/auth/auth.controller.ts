@@ -63,9 +63,12 @@ export class AuthController {
 
   @Get('verify-email')
   async verifyEmail(@Query('token') token: string) {
-    const { first_name, email } = await this.authService.verifyEmail(token);
+    const { first_name, email, has_previously_verified } =
+      await this.authService.verifyEmail(token);
 
-    await this.emailQueue.add(EmailTypes.WELCOME, { first_name, email });
+    if (!has_previously_verified) {
+      await this.emailQueue.add(EmailTypes.WELCOME, { first_name, email });
+    }
     return success(null, 'email verified successfully');
   }
 }

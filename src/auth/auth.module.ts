@@ -18,7 +18,7 @@ import { BullTypes } from '../config/types';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('jwt_secret'),
-        signOptions: { expiresIn: '1h' },
+        signOptions: { expiresIn: '1d' },
       }),
       inject: [ConfigService],
     }),

@@ -11,29 +11,22 @@ import { Knex } from 'knex';
 import { Event, Ticket } from './entities/event.entity';
 import { paginate } from '../util/function';
 import { CreateTicketDto, UpdateTicketDto } from './dto/create-ticket.dto';
+import { TableName } from '../database/tables';
 
 @Injectable()
 export class EventsService {
-  private readonly eventsQuery: Knex.QueryBuilder<Event>;
-  private readonly activeEventsQuery: Knex.QueryBuilder<Event>;
-  private readonly ticketsQuery: Knex.QueryBuilder<Ticket>;
-
-  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {
-    this.eventsQuery = this.knex<Event>('events');
-    this.activeEventsQuery = this.knex<Event>('active_events');
-    this.ticketsQuery = this.knex<Ticket>('tickets');
-  }
+  constructor(@Inject(KNEX_CONNECTION) private readonly knex: Knex) {}
 
   async createEvent(creatorId: string, createEventDto: CreateEventDto) {
     const { name, description, startDate, endDate, location } = createEventDto;
-    const [existingEvent] = await this.activeEventsQuery
+    const [existingEvent] = await this.knex<Event>(TableName.ACTIVE_EVENTS)
       .where('name', name)
       .andWhere('creator_id', creatorId);
 
     if (existingEvent) {
       throw new BadRequestException('an event with this name already exists');
     }
-    const [newEvent] = await this.eventsQuery
+    const [newEvent] = await this.knex<Event>(TableName.EVENTS)
       .insert({
         name: name,
         description: description,
@@ -49,12 +42,12 @@ export class EventsService {
 
   async findAllEvents() {
     //todo( add sorting and filtering)
-    return await paginate<Event>(this.eventsQuery, 1);
+    return await paginate<Event>(this.knex<Event>(TableName.EVENTS), 1);
   }
 
   async findAllActiveEvents() {
     return await paginate<Event>(
-      this.activeEventsQuery,
+      this.knex<Event>(TableName.ACTIVE_EVENTS),
       1,
       'created_at',
       'desc',
@@ -62,7 +55,7 @@ export class EventsService {
   }
 
   async findOne(id: string) {
-    const [event] = await this.eventsQuery.where('id', id);
+    const [event] = await this.knex<Event>(TableName.EVENTS).where('id', id);
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -71,7 +64,10 @@ export class EventsService {
 
   async updateEvent(eventId: string, updateEventDto: UpdateEventDto) {
     const { name, description, startDate, endDate, location } = updateEventDto;
-    const [event] = await this.eventsQuery.where('id', eventId);
+    const [event] = await this.knex<Event>(TableName.ACTIVE_EVENTS).where(
+      'id',
+      eventId,
+    );
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -80,7 +76,7 @@ export class EventsService {
       throw new BadRequestException('event already published');
     }
 
-    const [updatedEvent] = await this.eventsQuery
+    const [updatedEvent] = await this.knex<Event>(TableName.EVENTS)
       .where('id', eventId)
       .update({
         name: name || event.name,
@@ -95,10 +91,12 @@ export class EventsService {
   }
 
   async publishEvent(eventId: string, creatorId: string) {
-    const [event] = await this.eventsQuery.where({
-      id: eventId,
-      creator_id: creatorId,
-    });
+    const [event] = await this.knex<Event>(TableName.EVENTS)
+      .where({
+        id: eventId,
+        creator_id: creatorId,
+      })
+      .select('id', 'published_at');
     if (!event) {
       throw new EventNotFoundException();
     }
@@ -107,12 +105,14 @@ export class EventsService {
       throw new BadRequestException('event is already published');
     }
 
-    const tickets = await this.ticketsQuery.where('event_id', event.id).first();
-    if (!tickets) {
+    const [ticket] = await this.knex<Ticket>(TableName.TICKETS)
+      .where('event_id', event.id)
+      .select('id');
+    if (!ticket) {
       throw new BadRequestException('event has no tickets');
     }
 
-    const [publishedEvent] = await this.eventsQuery
+    const [publishedEvent] = await this.knex<Event>(TableName.EVENTS)
       .where('id', eventId)
       .update({ published_at: new Date() })
       .returning('*');
@@ -121,7 +121,7 @@ export class EventsService {
   }
 
   async deleteEvent(eventId: string, creatorId: string) {
-    const event = await this.eventsQuery
+    const event = await this.knex<Event>(TableName.EVENTS)
       .where({ id: eventId, creator_id: creatorId, published_at: null })
       .delete();
     if (event === 0) {
@@ -134,7 +134,7 @@ export class EventsService {
     organizerId: string,
     ticketDto: CreateTicketDto,
   ) {
-    const [event] = await this.eventsQuery.where({
+    const [event] = await this.knex<Event>(TableName.EVENTS).where({
       id: eventId,
       creator_id: organizerId,
     });
@@ -146,12 +146,12 @@ export class EventsService {
       throw new BadRequestException('event is already published');
     }
 
-    const [ticket] = await this.ticketsQuery
+    const [ticket] = await this.knex<Ticket>(TableName.TICKETS)
       .insert({
         name: ticketDto.name,
         description: ticketDto.description,
         price: ticketDto.price,
-        total_quantity: ticketDto.total_quantity,
+        available_quantity: ticketDto.available_quantity,
         event_id: event.id,
       } as Ticket)
       .returning('*');
@@ -160,21 +160,24 @@ export class EventsService {
   }
 
   async getTickets(eventId: string) {
-    const [event] = await this.eventsQuery.where('id', eventId);
+    const [event] = await this.knex<Event>(TableName.EVENTS).where(
+      'id',
+      eventId,
+    );
     if (!event) {
       throw new EventNotFoundException();
     }
 
     return await paginate<Ticket>(
-      this.ticketsQuery.where('event_id', event.id),
+      this.knex<Ticket>(TableName.TICKETS).where('event_id', event.id),
       1,
     );
   }
 
   async getTicket(idParam: TicketIdParam) {
-    const [event, ticket] = await Promise.all([
-      this.eventsQuery.where('id', idParam.id).first(),
-      this.ticketsQuery.where('id', idParam.ticket_id).first(),
+    const [[event], [ticket]] = await Promise.all([
+      this.knex<Event>(TableName.EVENTS).where('id', idParam.id),
+      this.knex<Ticket>(TableName.TICKETS).where('id', idParam.ticket_id),
     ]);
     if (!event) {
       throw new EventNotFoundException();
@@ -190,13 +193,14 @@ export class EventsService {
     idParam: TicketIdParam,
     ticketDto: UpdateTicketDto,
   ) {
-    const [event, ticket] = await Promise.all([
-      this.eventsQuery
+    const [[event], [ticket]] = await Promise.all([
+      this.knex<Event>(TableName.EVENTS)
         .where({ id: idParam.id, creator_id: organizerId })
-        .first(),
-      this.ticketsQuery
-        .where({ id: idParam.ticket_id, event_id: idParam.id })
-        .first(),
+        .select('id'),
+      this.knex<Ticket>(TableName.TICKETS).where({
+        id: idParam.ticket_id,
+        event_id: idParam.id,
+      }),
     ]);
     if (!event) {
       throw new EventNotFoundException();
@@ -205,13 +209,14 @@ export class EventsService {
       throw new TicketNotFoundException();
     }
 
-    const [updatedTicket] = await this.ticketsQuery
+    const [updatedTicket] = await this.knex<Ticket>(TableName.TICKETS)
       .where('id', ticket.id)
       .update({
         name: ticketDto.name || ticket.name,
         description: ticketDto.description || ticket.description,
         price: ticketDto.price || ticket.price,
-        total_quantity: ticketDto.total_quantity || ticket.total_quantity,
+        available_quantity:
+          ticketDto.available_quantity || ticket.available_quantity,
       } as Ticket)
       .returning('*');
 
@@ -219,13 +224,15 @@ export class EventsService {
   }
 
   async deleteTicket(organizerId: string, idParam: TicketIdParam) {
-    const [event, ticket] = await Promise.all([
-      this.eventsQuery
-        .where({ id: idParam.id, creator_id: organizerId })
-        .first(),
-      this.ticketsQuery
-        .where({ id: idParam.ticket_id, event_id: idParam.id })
-        .first(),
+    const [[event], [ticket]] = await Promise.all([
+      this.knex<Event>(TableName.EVENTS).where({
+        id: idParam.id,
+        creator_id: organizerId,
+      }),
+      this.knex<Ticket>(TableName.TICKETS).where({
+        id: idParam.ticket_id,
+        event_id: idParam.id,
+      }),
     ]);
     if (!event) {
       throw new EventNotFoundException();
@@ -233,7 +240,7 @@ export class EventsService {
     if (!ticket) {
       throw new TicketNotFoundException();
     }
-    const deletedTicket = await this.ticketsQuery
+    const deletedTicket = await this.knex<Ticket>(TableName.TICKETS)
       .where({ id: idParam.ticket_id })
       .delete();
     if (deletedTicket === 0) {

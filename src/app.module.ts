@@ -15,18 +15,21 @@ import { JwtAuthGuard } from './auth/guards/jwt.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
-import { BullTypes, NODEMAILER_TRANSPORTER } from './config/types';
+import { NODEMAILER_TRANSPORTER } from './config/types';
 import nodemailer from 'nodemailer';
 import { EmailProcessor } from './util/email.processor';
 import { CartModule } from './cart/cart.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
+    LoggerModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
       envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
@@ -43,7 +46,6 @@ import { CartModule } from './cart/cart.module';
       }),
       inject: [ConfigService],
     }),
-    LoggerModule,
     DatabaseModule,
     UserModule,
     AuthModule,
@@ -77,7 +79,7 @@ import { CartModule } from './cart/cart.module';
     },
     EmailProcessor,
   ],
-  exports: [NODEMAILER_TRANSPORTER],
+  exports: [NODEMAILER_TRANSPORTER, BullModule],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): any {
