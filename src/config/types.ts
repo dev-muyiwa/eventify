@@ -12,4 +12,4 @@ export const EmailTypes = {
   ORDER_CONFIRMATION: 'order-confirmation',
 };
 
-export const NODEMAILER_TRANSPORTER = 'Nodemailer-Transporter';
+export const NODEMAILER_TRANSPORTER = 'nodemailer-transporter';

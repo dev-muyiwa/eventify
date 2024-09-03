@@ -36,6 +36,7 @@ export class EmailProcessor extends WorkerHost {
 
   async process(job: Job) {
     const { name, data } = job;
+    this.logger.info(`Processing job ${name} with data ${data}`);
     const appName = this.configService.get<string>('app_name');
     const port = this.configService.get<number>('port') as number;
     const readFileAsync = promisify(readFile);

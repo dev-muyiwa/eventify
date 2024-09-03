@@ -71,17 +71,13 @@ export class CartController {
     @Body() data: WebHookDto,
   ) {
     const secret = this.configService.get('paystack_secret_key');
-    //validate event
     const hash = crypto
       .createHmac('sha512', secret)
       .update(JSON.stringify(data))
       .digest('hex');
-    // acknowledge the request
     if (hash == req.headers['x-paystack-signature']) {
-      // verify the transaction
       if (data.event == 'charge.success' && data.data.status === 'success') {
         this.logger.info(`Payment request success: ${data}`, data);
-        // only update the payment status if the payment was successful and the db record is not already updated
         await this.cartService.verifyPayment(data.data);
         res.status(HttpStatus.OK).send();
       } else {
@@ -94,7 +90,6 @@ export class CartController {
     }
   }
 
-  //   cron job to update the status of orders that have not been paid for
   @Cron(CronExpression.EVERY_30_MINUTES)
   async updatePendingOrders() {
     this.logger.info('Updating pending orders');

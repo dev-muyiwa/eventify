@@ -41,7 +41,6 @@ export class CartService {
   ) {}
 
   async addItemToCart(userId: string, item: CreateCartItemDto) {
-    // if the item added already exists, increment the amount in cart and decrement the available ticket quantity
     const [cart] = await this.knex<Cart>(TableName.CARTS)
       .insert({
         user_id: userId,
@@ -59,6 +58,15 @@ export class CartService {
 
     if (ticket.available_quantity < item.quantity) {
       throw new BadRequestException('ticket quantity not available');
+    }
+
+    // if the quantity is 0, check if the item is in the cart and remove it
+    if (item.quantity === 0) {
+      await this.knex<CartItem>(TableName.CART_ITEMS)
+        .where('ticket_id', item.ticket_id)
+        .andWhere('cart_id', cart.id)
+        .delete();
+      return;
     }
 
     const [cartItem] = await this.knex<CartItem>(TableName.CART_ITEMS)
@@ -95,10 +103,6 @@ export class CartService {
   }
 
   async checkoutCart(user: User) {
-    // const [cart] = await this.knex<Cart>(TableName.CARTS)
-    //   .where({ user_id: user.id })
-    //   .select('*'); // remove this line
-
     // make sure that all the items in the cart is available
     const cartItems = await this.getItemsInCart(user.id);
     const apiKey = this.configService.get<string>('paystack_secret_key');
@@ -123,55 +127,49 @@ export class CartService {
 
     // move this into a queue
     await this.knex.transaction(async (trx) => {
-      try {
-        const [order] = await trx<Order>(TableName.ORDERS)
-          .insert({
-            user_id: user.id,
-            total_amount: cartItems.total,
-          } as Order)
-          .returning('*');
+      const [order] = await trx<Order>(TableName.ORDERS)
+        .insert({
+          user_id: user.id,
+          total_amount: cartItems.total,
+        } as Order)
+        .returning('*');
 
-        const items = await trx<OrderItem>(TableName.ORDER_ITEMS)
-          .insert(
-            cartItems.items.map(
-              (item) =>
-                ({
-                  ticket_id: item.ticket_id,
-                  quantity: item.quantity,
-                  order_id: order.id,
-                }) as OrderItem,
-            ),
-          )
-          .returning('id');
-        if (items.length !== cartItems.items.length) {
-          throw new InternalServerErrorException('order items not created');
-        }
+      const items = await trx<OrderItem>(TableName.ORDER_ITEMS)
+        .insert(
+          cartItems.items.map(
+            (item) =>
+              ({
+                ticket_id: item.ticket_id,
+                quantity: item.quantity,
+                order_id: order.id,
+              }) as OrderItem,
+          ),
+        )
+        .returning('id');
+      if (items.length !== cartItems.items.length) {
+        throw new InternalServerErrorException('order items not created');
+      }
 
-        for (const item of cartItems.items) {
-          const ticketRecord = await trx<Ticket>(TableName.TICKETS)
-            .where('id', item.ticket_id)
-            .andWhere('available_quantity', '>=', item.quantity)
-            .decrement('available_quantity', item.quantity)
-            .forUpdate();
-          if (ticketRecord === 0) {
-            throw new InternalServerErrorException(
-              'ticket quantity not updated',
-            );
-          }
+      for (const item of cartItems.items) {
+        const ticketRecord = await trx<Ticket>(TableName.TICKETS)
+          .where('id', item.ticket_id)
+          .andWhere('available_quantity', '>=', item.quantity)
+          .decrement('available_quantity', item.quantity)
+          .forUpdate();
+        if (ticketRecord === 0) {
+          throw new InternalServerErrorException('ticket quantity not updated');
         }
+      }
 
-        const paymentRecord = await trx<Payment>(TableName.PAYMENTS)
-          .insert({
-            amount: order.total_amount,
-            txn_reference: data.data.reference,
-            order_id: order.id,
-          } as Payment)
-          .returning('id');
-        if (paymentRecord.length === 0) {
-          throw new InternalServerErrorException('payment record not created');
-        }
-      } catch (err) {
-        throw err;
+      const paymentRecord = await trx<Payment>(TableName.PAYMENTS)
+        .insert({
+          amount: order.total_amount,
+          txn_reference: data.data.reference,
+          order_id: order.id,
+        } as Payment)
+        .returning('id');
+      if (paymentRecord.length === 0) {
+        throw new InternalServerErrorException('payment record not created');
       }
     });
 
@@ -179,21 +177,6 @@ export class CartService {
   }
 
   async verifyPayment(data: any) {
-    // make request to the verify transaction endpoint
-    // const apiKey = this.configService.get<string>('paystack_secret_key');
-    // const { data: verifyData } = await firstValueFrom(
-    //   this.httpService.get(
-    //     `https://api.paystack.co/transaction/verify/${data.reference}`,
-    //     {
-    //       headers: {
-    //         Authorization: `Bearer ${apiKey}`,
-    //         'Content-Type': 'application/json',
-    //       },
-    //     },
-    //   ),
-    // );
-    // // if the payment didn't go through, update the payment record and set it to failed
-    // // if (verifyData.data.status !== 'success')
     const [payment] = await this.knex<Payment>(TableName.PAYMENTS)
       .where({ txn_reference: data.reference })
       .leftJoin('orders', 'payments.order_id', 'orders.id')
@@ -242,7 +225,6 @@ export class CartService {
           throw err;
         }
       });
-      // send a confirmation email
       const readableDate = new Date(data.paid_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
@@ -271,13 +253,22 @@ export class CartService {
   }
 
   async updatePendingOrders() {
-    // get all payments that are pending
     const payments = await this.knex<Payment>(TableName.PAYMENTS)
-      .where('status', PaymentStatus.PENDING)
-      .andWhere('created_at', '<', new Date(Date.now() - 60 * 60 * 1000))
-      .select('txn_reference', 'amount', 'order_id');
+      .leftJoin('order_items', 'payments.order_id', 'order_items.order_id')
+      .where('payments.status', PaymentStatus.PENDING)
+      .andWhere(
+        'payments.created_at',
+        '<',
+        new Date(Date.now() - 20 * 60 * 1000),
+      )
+      .select(
+        'txn_reference',
+        'amount',
+        'payments.order_id as order_id',
+        'order_items.ticket_id as ticket_id',
+        'order_items.quantity as quantity',
+      );
     for (const payment of payments) {
-      // make request to the verify transaction endpoint
       const apiKey = this.configService.get<string>('paystack_secret_key');
       const { data } = await firstValueFrom(
         this.httpService.get(
@@ -290,20 +281,25 @@ export class CartService {
           },
         ),
       );
-      // if the payment didn't go through, update the payment record and set it to failed
-      if (data.data.status !== 'success') {
+      this.logger.info('payment verification', data);
+      const { status } = data.data;
+      if (['abandoned', 'failed'].includes(status)) {
         await this.knex.transaction(async (trx) => {
           await trx<Payment>(TableName.PAYMENTS)
             .where({ txn_reference: payment.txn_reference })
             .update({
               status: PaymentStatus.FAILED,
+              payment_channel: data.data.channel,
+              currency: data.data.currency,
             } as Payment);
           await trx<Order>(TableName.ORDERS)
             .where('id', payment.order_id)
             .update({ status: OrderStatus.CANCELLED } as Order);
+          await trx<Ticket>(TableName.TICKETS)
+            .where('id', payment.ticket_id)
+            .increment('available_quantity', payment.quantity);
         });
       }
     }
-    // update the status of orders that have not been paid for
   }
 }

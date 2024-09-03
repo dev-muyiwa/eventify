@@ -7,7 +7,7 @@ services:
     ports:
       - '${PORT}:3000'
     env_file:
-      - .env
+      - .env.development
     healthcheck:
       test: [ "CMD-SHELL", "wget --spider --timeout=10 --quiet http://localhost:3000/api/v1/health || exit 1" ]
       interval: 30s
@@ -25,7 +25,7 @@ services:
     image: postgres:16
     restart: always
     env_file:
-      - .env
+      - .env.development
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -44,7 +44,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis:latest
+    image: redis:7.4.0
     restart: always
     env_file:
       - .env.development
@@ -131,6 +131,7 @@ services:
 
 volumes:
   db_data:
+  redis_data:
 
 networks:
   api-network:
