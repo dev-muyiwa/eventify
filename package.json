@@ -61,6 +61,7 @@
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.3.10",
     "@testcontainers/postgresql": "^10.11.0",
+    "@testcontainers/redis": "^10.13.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/dotenv": "^8.2.0",

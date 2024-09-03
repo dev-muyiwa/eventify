@@ -1,15 +1,15 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { RegisterUserDto } from '../src/auth/dto/register-user.dto';
 import { Knex } from 'knex';
 import { User, UserRole } from '../src/user/entities/user.entity';
 import { setupTestConfig } from './setup';
-import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from '../src/user/dto/update-user.dto';
 import bcrypt from 'bcryptjs';
 import { UpdatePasswordDto } from '../src/user/dto/update-password.dto';
 import { faker } from '@faker-js/faker';
+import { JwtService } from '@nestjs/jwt';
+import { RegisterUserDto } from '../src/auth/dto/register-user.dto';
 
 describe('UserController (e2e)', () => {
   let app: INestApplication;
@@ -23,6 +23,10 @@ describe('UserController (e2e)', () => {
     app = setup.app;
     container = setup.container;
     knex = setup.knex;
+    // user = setup.user;
+    // admin = setup.admin;
+    // accessToken = setup.accessToken;
+    // adminToken = setup.adminToken;
 
     const jwtService = await app.resolve(JwtService);
 
@@ -75,6 +79,7 @@ describe('UserController (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
+    await knex.destroy();
     await container.stop();
   });
 
@@ -87,18 +92,18 @@ describe('UserController (e2e)', () => {
   describe('/users (GET)', () => {
     const getAllUsersEndpoint = '/users';
 
-    // it('should fetch users with pagination, and return a status code of 200 if the user has the admin role', async () => {
-    //   const response = await request(app.getHttpServer())
-    //     .get(getAllUsersEndpoint)
-    //     .auth(adminToken, { type: 'bearer' })
-    //     .expect(200);
-    //
-    //   const { success, data, message } = response.body;
-    //
-    //   expect(success).toBe(true);
-    //   expect(message).toBe('users retrieved');
-    //   expect(data).toBe('This action returns all user');
-    // });
+    it('should fetch users with pagination, and return a status code of 200 if the user has the admin role', async () => {
+      const response = await request(app.getHttpServer())
+        .get(getAllUsersEndpoint)
+        .auth(adminToken, { type: 'bearer' })
+        .expect(200);
+
+      const { success, data, message } = response.body;
+
+      expect(success).toBe(true);
+      expect(message).toBe('users retrieved');
+      expect(data).toBe('This action returns all user');
+    });
 
     it("should return a status code of 403 if the user isn't an admin", async () => {
       const response = await request(app.getHttpServer())

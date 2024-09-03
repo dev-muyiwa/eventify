@@ -1,7 +1,3 @@
-Here's the updated README draft including Knex as the technology for SQL queries:
-
----
-
 # Eventify
 
 Eventify is a comprehensive event booking system designed to manage events, ticketing, and payments. Built with NestJS, Docker, and Knex, this system provides a modern, scalable solution for event management with integrated Swagger documentation and rate limiting.
@@ -93,7 +89,3 @@ Contributions are welcome! To contribute:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-This README now reflects your use of Knex for SQL query building alongside other technologies.

@@ -23,6 +23,7 @@ describe('AuthController (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
+    await knex.destroy();
     await container.stop();
   });
 
